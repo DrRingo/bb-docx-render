@@ -1,0 +1,11 @@
+{
+	  "ho_ten": "Nguyễn Văn A",
+	    "ngay_sinh": "1990-05-20",
+	      "dia_chi": "123 Lê Lợi, Q.1, TP.HCM",
+	        "so_tien": 15000000,
+		  "ds_muc": [
+			      {"ten": "Mục 1", "so_luong": 2, "gia": 50000},
+			          {"ten": "Mục 2", "so_luong": 1, "gia": 120000}
+				    ]
+}
+

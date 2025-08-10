@@ -1,0 +1,15 @@
+{:paths ["."]
+ :deps  {cheshire/cheshire {:mvn/version "5.13.0"}}
+ :tasks
+ {docx:fill
+  {:doc "Điền JSON vào template DOCX bằng docxtpl (Poetry env). Usage: bb docx:fill <template.docx> <data.json> [-o output.docx|output-template]"
+   :requires ([babashka.process :refer [shell]])
+   :task (let [args *command-line-args*]
+           ;; chạy script bằng python của Poetry env
+           (apply shell (concat ["poetry" "run" "bb" "fill_docx.bb"] args)))}
+
+  docx:install
+  {:doc "Cài docxtpl vào Poetry env"
+   :task ((requiring-resolve 'babashka.process/shell)
+          "poetry" "add" "docxtpl" "jinja2" "python-docx")}}}
+

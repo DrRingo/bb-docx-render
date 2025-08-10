@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "bb-docx-runner"
+version = "0.1.0"
+description = "Render DOCX từ template bằng docxtpl (Poetry + Babashka)"
+authors = ["Ringo <you@example.com>"]
+package-mode = false   # QUAN TRỌNG: không cài current project
+
+[tool.poetry.dependencies]
+python = "^3.10"
+docxtpl = "*"
+jinja2 = "*"
+python-docx = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
