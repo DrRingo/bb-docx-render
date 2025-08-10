@@ -8,6 +8,7 @@
 (defn usage []
   (println "Cách dùng:")
   (println "  bb fill_docx.bb <template.docx> <data.json> [-o output.docx|output-template]")
+  (println "  Ví dụ: -o 'out/{{ho_ten}} - {{ngay_sinh}}.docx'")
   (System/exit 1))
 
 (defn find-index [v x]
@@ -31,8 +32,10 @@
     (binding [*out* *err*] (println "Không tìm thấy JSON:" datafile))
     (System/exit 3))
 
-  (let [ctx (json/parse-string (slurp datafile) true)
-        ;; Để an toàn encoding, giữ pycode ở ASCII + thêm coding cookie
+  ;; Tách thư mục và phần template tên file để bảo toàn path
+  (let [out-dir  (some-> output-tmpl fs/parent str) ; có thể là nil nếu không có thư mục
+        out-name (fs/file-name output-tmpl)
+        ;; Python code: render + sanitize + save
         pycode (str
 "# -*- coding: utf-8 -*-\n"
 "import sys, json, datetime, re, os\n"
@@ -47,50 +50,64 @@
 "os.environ.setdefault('PYTHONIOENCODING','utf-8')\n"
 "os.environ.setdefault('PYTHONUTF8','1')\n"
 "\n"
-"def sanitize_filename(name):\n"
+"def sanitize_filename(name:str)->str:\n"
 "    name = name.replace(' ', '_')\n"
 "    return re.sub(r'[<>:\\\":/\\\\|?*]+', '', name)\n"
 "\n"
 "def main():\n"
-"    if len(sys.argv) < 4:\n"
-"        print('Usage: python - <template.docx> <data.json> <output-template>', file=sys.stderr)\n"
+"    # args: <template.docx> <data.json> <output_dir> <output_name_template>\n"
+"    if len(sys.argv) < 5:\n"
+"        print('Usage: python - <template.docx> <data.json> <output_dir> <output_name_template>', file=sys.stderr)\n"
 "        sys.exit(1)\n"
-"    tpl_path, json_path, output_template = sys.argv[1], sys.argv[2], sys.argv[3]\n"
+"    tpl_path, json_path, out_dir, out_name_tmpl = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]\n"
 "    with open(json_path, 'r', encoding='utf-8') as f:\n"
 "        ctx = json.load(f)\n"
 "    now = datetime.datetime.now()\n"
 "    ctx.setdefault('_now', now)\n"
 "    ctx.setdefault('_today', now.date().isoformat())\n"
-"    if '{{' in output_template:\n"
-"        output_final = JEnv().from_string(output_template).render(ctx)\n"
+"    # render file name (only the base name)\n"
+"    if '{{' in out_name_tmpl:\n"
+"        out_name = JEnv().from_string(out_name_tmpl).render(ctx)\n"
 "    else:\n"
-"        output_final = output_template\n"
-"    output_final = sanitize_filename(output_final)\n"
+"        out_name = out_name_tmpl\n"
+"    out_name = sanitize_filename(out_name)\n"
+"    # full path\n"
+"    if out_dir and len(out_dir.strip())>0:\n"
+"        os.makedirs(out_dir, exist_ok=True)\n"
+"        out_path = os.path.join(out_dir, out_name)\n"
+"    else:\n"
+"        out_path = out_name\n"
+"    # render docx\n"
 "    tpl = DocxTemplate(tpl_path)\n"
 "    tpl.render(ctx)\n"
-"    tpl.save(output_final)\n"
+"    tpl.save(out_path)\n"
 "    try:\n"
-"        print(output_final)\n"
+"        print(out_path)\n"
 "    except UnicodeEncodeError:\n"
-"        sys.stdout.buffer.write((output_final + '\\n').encode('utf-8'))\n"
+"        sys.stdout.buffer.write((out_path + '\\n').encode('utf-8'))\n"
 "\n"
 "if __name__ == '__main__':\n"
-"    main()\n")]
-    ;; Chạy Python trong Poetry env
-    (let [env (merge (into {} (System/getenv))
-                     {"PYTHONIOENCODING" "utf-8" "PYTHONUTF8" "1"})
-          r (try
-              (sh {:in pycode :out :string :err :string :env env}
-                  "poetry" "run" "python" "-" template datafile output-tmpl)
-              (catch Exception e
-                {:exit 127 :err (str e) :out ""}))]
-      (if (zero? (:exit r))
-        (println "Đã tạo:" (str/trim (:out r)))
-        (do
-          (binding [*out* *err*]
-            (println "Lỗi khi chạy Python trong Poetry env:")
-            (println (str/trim (:err r)))
-            (println "Hãy đảm bảo bạn đã chạy:")
-            (println "  poetry add docxtpl jinja2 python-docx"))
-          (System/exit (:exit r)))))))
+"    main()\n")
+        env (merge (into {} (System/getenv))
+                   {"PYTHONIOENCODING" "utf-8" "PYTHONUTF8" "1"})
+        run (fn [& cmd]
+              (try
+                (apply sh {:in pycode :out :string :err :string :env env} cmd)
+                (catch Exception _ {:exit 127 :out "" :err ""})))
+        ;; Ưu tiên Poetry; nếu fail (WSL lỗi config/version), fallback python3 -> python
+        r (or (let [r (run "poetry" "run" "python" "-" template datafile (or out-dir "") out-name)]
+                (when (zero? (:exit r)) r))
+              (let [r (run "python3" "-" template datafile (or out-dir "") out-name)]
+                (when (zero? (:exit r)) r))
+              (run "python" "-" template datafile (or out-dir "") out-name))]
+
+    (if (zero? (:exit r))
+      (println "Đã tạo:" (str/trim (:out r)))
+      (do
+        (binding [*out* *err*]
+          (println (str/trim (:err r)))
+          (println "Gợi ý:")
+          (println " - Dùng Poetry và cài deps: poetry add docxtpl jinja2 python-docx, rồi chạy lại.")
+          (println " - Hoặc fallback cài pip cho python3: pip3 install --user docxtpl jinja2 python-docx"))
+        (System/exit (:exit r)))))) 
 

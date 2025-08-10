@@ -1,5 +1,10 @@
 {:paths ["."]
  :deps  {cheshire/cheshire {:mvn/version "5.13.0"}}
+
+ ;; Cấu hình để bbin tạo “binary” bb-docx-render
+ ;; Sau khi cài bằng bbin, bạn có thể gõ: bb-docx-render template.docx data.json -o '{{...}}.docx'
+ :bbin/bin
+ {bb-docx-render {:main-opts ["fill_docx.bb"]}}
  :tasks
  {docx:fill
   {:doc "Điền JSON vào template DOCX bằng docxtpl (Poetry env). Usage: bb docx:fill <template.docx> <data.json> [-o output.docx|output-template]"
@@ -7,6 +12,7 @@
    :task (let [args *command-line-args*]
            ;; chạy script bằng python của Poetry env
            (apply shell (concat ["poetry" "run" "bb" "fill_docx.bb"] args)))}
+
 
   docx:install
   {:doc "Cài docxtpl vào Poetry env"
