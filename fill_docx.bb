@@ -94,8 +94,8 @@
               (try
                 (apply sh {:in pycode :out :string :err :string :env env} cmd)
                 (catch Exception _ {:exit 127 :out "" :err ""})))
-        ;; Ưu tiên Poetry; nếu fail (WSL lỗi config/version), fallback python3 -> python
-        r (or (let [r (run "poetry" "run" "python" "-" template datafile (or out-dir "") out-name)]
+        ;; Ưu tiên uv; nếu fail, fallback python3 -> python
+        r (or (let [r (run "uv" "run" "python" "-" template datafile (or out-dir "") out-name)]
                 (when (zero? (:exit r)) r))
               (let [r (run "python3" "-" template datafile (or out-dir "") out-name)]
                 (when (zero? (:exit r)) r))
@@ -107,7 +107,7 @@
         (binding [*out* *err*]
           (println (str/trim (:err r)))
           (println "Gợi ý:")
-          (println " - Dùng Poetry và cài deps: poetry add docxtpl jinja2 python-docx, rồi chạy lại.")
+          (println " - Dùng uv và cài deps: uv add docxtpl jinja2 python-docx, rồi chạy lại.")
           (println " - Hoặc fallback cài pip cho python3: pip3 install --user docxtpl jinja2 python-docx"))
-        (System/exit (:exit r)))))) 
+        (System/exit (:exit r))))))
 

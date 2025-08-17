@@ -1,6 +1,6 @@
 # fill_docx — Điền dữ liệu JSON vào template DOCX (tên file cũng động)
 
-`fill_docx.bb` là script **Babashka** dùng **Python + docxtpl** (chạy trong **Poetry env**) để:
+`fill_docx.bb` là script **Babashka** dùng **Python + docxtpl** (chạy trong **uv env**) để:
 - Render nội dung từ `template.docx` theo cú pháp **Jinja** (`{{ var }}`, `{% for %}`, `{% if %}`).
 - **Đặt tên file đầu ra động** theo template (cũng dùng Jinja), ví dụ: `-o '{{ho_ten}} - {{ngay_sinh}}.docx'`.
 - Tự **chuẩn hóa tên file**: thay khoảng trắng thành `_` và loại bỏ ký tự không hợp lệ (`<>:"/\|?*`).
@@ -10,16 +10,16 @@
 ## Yêu cầu & Dependencies
 
 ### Bắt buộc
-- **Babashka** (chạy script `.bb`)  
-- **Poetry** (quản lý môi trường Python)
-- **Python** (được Poetry cài theo env của dự án)
+- **Babashka** (chạy script `.bb`)
+- **uv** (quản lý môi trường Python)
+- **Python** (được uv cài theo env của dự án)
 
-### Thư viện Python (cài bằng Poetry)
+### Thư viện Python (cài bằng uv)
 - `docxtpl`
 - `jinja2`
 - `python-docx`
 
-> Script gọi Python qua: `poetry run python -` để chắc chắn dùng đúng môi trường Poetry.
+> Script gọi Python qua: `uv run python -` để chắc chắn dùng đúng môi trường uv.
 
 ---
 
@@ -35,11 +35,11 @@ bb-docx-runner/
 └─ data.json             (dữ liệu)
 ```
 
-### 2) Khởi tạo Poetry & cài dependencies
+### 2) Khởi tạo uv & cài dependencies
 ```bash
 cd bb-docx-runner
-poetry init --no-interaction
-poetry add docxtpl jinja2 python-docx
+uv init
+uv add docxtpl jinja2 python-docx
 ```
 
 *(Nếu dùng **task** của Babashka, thêm `bb.edn` như bên dưới.)*
@@ -48,7 +48,7 @@ poetry add docxtpl jinja2 python-docx
 
 ## Hướng dẫn sử dụng
 
-### A) Chạy trực tiếp script Babashka (Poetry env)
+### A) Chạy trực tiếp script Babashka (uv env)
 
 #### Linux / WSL / macOS
 ```bash
@@ -76,11 +76,11 @@ Tạo file `bb.edn`:
 {:paths ["."]
  :deps  {cheshire/cheshire {:mvn/version "5.13.0"}}
  :tasks
- {docx:fill
-  {:doc "Điền JSON vào template DOCX (Poetry env). Usage: bb docx:fill <template.docx> <data.json> [-o output.docx|template]"
-   :requires ([babashka.process :refer [shell]])
-   :task (let [args *command-line-args*]
-           (apply shell (concat ["poetry" "run" "bb" "fill_docx.bb"] args)))}}}
+{docx:fill
+ {:doc "Điền JSON vào template DOCX (uv env). Usage: bb docx:fill <template.docx> <data.json> [-o output.docx|template]"
+  :requires ([babashka.process :refer [shell]])
+  :task (let [args *command-line-args*]
+          (apply shell (concat ["uv" "run" "bb" "fill_docx.bb"] args)))}}}
 ```
 
 Chạy:
@@ -161,16 +161,16 @@ Dùng tham số `-o` với template Jinja (nhớ **nháy đơn**):
   - Linux/WSL/macOS: dùng **nháy đơn** `'{{...}}'`.  
   - PowerShell: cũng nên dùng **nháy đơn**.  
   - CMD: có thể dùng nháy kép `"` nhưng nên thử trước.
-- **Poetry**:  
-  - Script luôn gọi `poetry run python`, nên bạn **không cần** `poetry shell`.
-  - Nếu thấy lỗi “No module named docxtpl”: chạy `poetry add docxtpl jinja2 python-docx`.
+- **uv**:
+  - Script luôn gọi `uv run python`, nên bạn **không cần** tạo venv thủ công.
+  - Nếu thấy lỗi “No module named docxtpl”: chạy `uv add docxtpl jinja2 python-docx`.
 
 ---
 
 ## Khắc phục sự cố
 
-- **Không có Python/Poetry**: Cài Poetry theo hướng dẫn của Poetry, rồi `poetry add ...`.
-- **WSL báo PEP 668 / externally-managed**: Không ảnh hưởng vì ta dùng Poetry (venv riêng). Đừng cài system-wide bằng `pip`.
+- **Không có Python/uv**: Cài uv theo hướng dẫn của uv, rồi `uv add ...`.
+- **WSL báo PEP 668 / externally-managed**: Không ảnh hưởng vì ta dùng uv (venv riêng). Đừng cài system-wide bằng `pip`.
 - **UnicodeEncodeError khi in tên file**: Script đã reconfigure stdout UTF-8. Nếu console vẫn lỗi hiển thị, file vẫn được tạo đúng; bạn có thể đặt UTF-8 cho terminal (VD: `chcp 65001` trên CMD, hoặc cấu hình profile PowerShell).
 
 ---
@@ -178,7 +178,7 @@ Dùng tham số `-o` với template Jinja (nhớ **nháy đơn**):
 ## Kiến trúc & bảo trì
 
 - `fill_docx.bb` bơm Python code qua stdin (`python -`) để không cần file tạm.  
-- Mọi dependency Python nằm trong Poetry env → không “bẩn” hệ thống.  
+- Mọi dependency Python nằm trong uv env → không “bẩn” hệ thống.
 - Dễ mở rộng: thêm format tiền tệ, chèn ảnh (`InlineImage`), hoặc tiền xử lý tên file (bỏ dấu, lower-case, v.v.).
 
 ---

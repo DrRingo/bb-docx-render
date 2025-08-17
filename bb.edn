@@ -7,15 +7,15 @@
  {bb-docx-render {:main-opts ["fill_docx.bb"]}}
  :tasks
  {docx:fill
-  {:doc "Điền JSON vào template DOCX bằng docxtpl (Poetry env). Usage: bb docx:fill <template.docx> <data.json> [-o output.docx|output-template]"
+  {:doc "Điền JSON vào template DOCX bằng docxtpl (uv env). Usage: bb docx:fill <template.docx> <data.json> [-o output.docx|output-template]"
    :requires ([babashka.process :refer [shell]])
    :task (let [args *command-line-args*]
-           ;; chạy script bằng python của Poetry env
-           (apply shell (concat ["poetry" "run" "bb" "fill_docx.bb"] args)))}
+           ;; chạy script bằng python của uv env
+           (apply shell (concat ["uv" "run" "bb" "fill_docx.bb"] args)))}
 
 
   docx:install
-  {:doc "Cài docxtpl vào Poetry env"
+  {:doc "Cài docxtpl vào uv env"
    :task ((requiring-resolve 'babashka.process/shell)
-          "poetry" "add" "docxtpl" "jinja2" "python-docx")}}}
+          "uv" "add" "docxtpl" "jinja2" "python-docx")}}}
 
