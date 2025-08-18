@@ -25,6 +25,17 @@
 
 ## Cài đặt
 
+### Cài đặt qua Homebrew (macOS/Linux)
+
+Script đã được đóng gói thành công thức Homebrew, tự động kéo theo Babashka, Python và các thư viện cần thiết. Cài đặt nhanh bằng:
+
+```bash
+brew tap example/bb-docx-render https://github.com/example/bb-docx-render
+brew install bb-docx-render
+```
+
+Sau khi cài, lệnh `fill-docx` có sẵn để sử dụng ngay.
+
 ### 1) Clone / copy project
 Đặt các file trong một thư mục, ví dụ `bb-docx-runner/`:
 ```
