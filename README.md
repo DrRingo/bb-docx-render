@@ -30,7 +30,7 @@
 Script đã được đóng gói thành công thức Homebrew, tự động kéo theo Babashka, Python và các thư viện cần thiết. Cài đặt nhanh bằng:
 
 ```bash
-brew tap example/bb-docx-render https://github.com/example/bb-docx-render
+brew tap drringo/bb-docx-render https://github.com/drringo/bb-docx-render
 brew install bb-docx-render
 ```
 
