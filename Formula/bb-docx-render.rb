@@ -15,9 +15,10 @@ class BbDocxRender < Formula
     libexec.install "fill_docx.bb", "pyproject.toml"
     (bin/"fill-docx").write <<~EOS
       #!/bin/bash
-      # Change to the script's directory so `uv` can find pyproject.toml
-      cd "#{libexec}"
-      exec "#{Formula["babashka"].opt_bin}/bb" "fill_docx.bb" "$@"
+      # Set UV_PROJECT_DIR so `uv` finds pyproject.toml in libexec,
+      # while keeping the user's CWD for relative path arguments.
+      export UV_PROJECT_DIR="#{libexec}"
+      exec "#{Formula["babashka"].opt_bin}/bb" "#{libexec}/fill_docx.bb" "$@"
     EOS
   end
 
