@@ -3,12 +3,8 @@ name = "bb-docx-runner"
 version = "0.1.0"
 description = "Render DOCX từ template bằng docxtpl (uv + Babashka)"
 requires-python = ">=3.10"
-authors = [{name = "Ringo", email = "you@example.com"}]
-dependencies = [
-    "docxtpl",
-    "jinja2",
-    "python-docx",
-]
+authors = [{ name = "Ringo", email = "you@example.com" }]
+dependencies = ["docxtpl", "jinja2", "python-docx"]
 
 [tool.uv]
 # Không cài đặt project như package
@@ -17,3 +13,10 @@ package = false
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build]
+# Dự án này không phải là một package Python tiêu chuẩn mà là một tập hợp script.
+# Công cụ build `hatchling` cần được chỉ định rõ ràng file nào cần đưa vào
+# trong bản phân phối để tránh lỗi "Unable to determine which files to ship".
+# Chúng ta chỉ định file script chính ở đây.
+include = ["fill_docx.bb"]
