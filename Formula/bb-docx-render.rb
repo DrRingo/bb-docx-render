@@ -34,7 +34,7 @@ class BbDocxRender < Formula
             args+=("$arg")
           fi
           next_is_output=false
-        elif [ "$arg" = "-o" ];
+        elif [ "$arg" = "-o" ]; then
           args+=("-o")
           next_is_output=true
         elif [ -e "$arg" ]; then
