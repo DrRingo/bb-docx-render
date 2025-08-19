@@ -36,6 +36,16 @@ brew install bb-docx-render
 
 Sau khi cài, lệnh `fill-docx` có sẵn để sử dụng ngay.
 
+### Cài đặt qua Scoop (Windows)
+
+Manifest Scoop có sẵn để cài đặt nhanh trong PowerShell:
+
+```powershell
+scoop install https://raw.githubusercontent.com/DrRingo/bb-docx-render/main/scoop/bb-docx-render.json
+```
+
+Sau khi cài, lệnh `fill-docx` có sẵn để sử dụng ngay.
+
 ### 1) Clone / copy project
 Đặt các file trong một thư mục, ví dụ `bb-docx-runner/`:
 ```
