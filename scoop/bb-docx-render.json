@@ -1,0 +1,23 @@
+{
+  "version": "0.1",
+  "description": "Render DOCX templates using Babashka and Python",
+  "homepage": "https://github.com/DrRingo/bb-docx-render",
+  "license": "Apache-2.0",
+  "depends": [
+    "babashka",
+    "uv"
+  ],
+  "url": "https://github.com/DrRingo/bb-docx-render/archive/refs/tags/0.1.tar.gz",
+  "hash": "506b290ca38613d505010abcc945e270f6a30cfb8d555ee99aef204f4f7e78c4",
+  "extract_dir": "bb-docx-render-0.1",
+  "installer": {
+    "script": [
+      "New-Item -ItemType Directory \"$dir\\libexec\" | Out-Null",
+      "Move-Item \"$dir\\fill_docx.bb\" \"$dir\\libexec\\fill_docx.bb\"",
+      "Move-Item \"$dir\\pyproject.toml\" \"$dir\\libexec\\pyproject.toml\"",
+      "$wrapper = @\"\nparam([Parameter(ValueFromRemainingArguments=$true)][string[]]$args)\n$originalPwd = Get-Location\n$resolvedArgs = @()\n$nextIsOutput = $false\nforeach ($arg in $args) {\n  if ($nextIsOutput) {\n    if ([System.IO.Path]::IsPathRooted($arg)) { $resolvedArgs += $arg } else { $resolvedArgs += (Join-Path $originalPwd $arg) }\n    $nextIsOutput = $false\n  } elseif ($arg -eq '-o') {\n    $resolvedArgs += '-o'\n    $nextIsOutput = $true\n  } elseif (Test-Path $arg) {\n    $resolvedArgs += (Resolve-Path $arg).Path\n  } else {\n    $resolvedArgs += $arg\n  }\n}\nSet-Location \"$dir\\libexec\"\n& (Get-Command bb).Source 'fill_docx.bb' @resolvedArgs\n\"@",
+      "Set-Content \"$dir\\fill-docx.ps1\" $wrapper"
+    ]
+  },
+  "bin": "fill-docx.ps1"
+}
