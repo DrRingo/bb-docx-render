@@ -5,14 +5,6 @@
             [cheshire.core :as json]
             [clojure.string :as str]))
 
-(def original-cwd (or (System/getenv "BB_DOCX_RENDER_CWD") "."))
-
-(defn ->absolute-path [path]
-  (when path
-    (if (fs/absolute? path)
-      path
-      (str (fs/path original-cwd path)))))
-
 (defn usage []
   (println "Cách dùng:")
   (println "  bb fill_docx.bb <template.docx> <data.json> [-o output.docx|output-template]")
@@ -29,10 +21,8 @@
       positional (if (nil? idx) argv
                      (vec (concat (subvec argv 0 idx)
                                   (subvec argv (min (count argv) (+ idx 2))))))
-      ;; Resolve all paths relative to the original working directory
-      template (-> (get positional 0) ->absolute-path)
-      datafile (-> (get positional 1) ->absolute-path)
-      output-tmpl (->absolute-path output-tmpl)]
+      template (get positional 0)
+      datafile (get positional 1)]
 
   (when (or (nil? template) (nil? datafile)) (usage))
   (when-not (fs/exists? template)

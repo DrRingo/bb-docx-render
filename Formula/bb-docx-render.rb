@@ -15,15 +15,42 @@ class BbDocxRender < Formula
     libexec.install "fill_docx.bb", "pyproject.toml"
     (bin/"fill-docx").write <<~EOS
       #!/bin/bash
-      # Pass the user's original working directory to the script via an env var,
-      # so the script can resolve relative output paths correctly.
-      export BB_DOCX_RENDER_CWD="$(pwd)"
+      # This is the definitive wrapper script.
+      # Problem: The `fill_docx.bb` script (from the source tarball) must run from
+      # `libexec` for `uv` to work, but all user-provided paths are relative to `pwd`.
+      # Solution: Make ALL paths absolute before changing directory.
 
-      # Change to the libexec directory so `uv` can find `pyproject.toml`.
+      args=()
+      next_is_output=false
+      original_pwd="$(pwd)"
+
+      for arg in "$@"; do
+        if [ "$next_is_output" = true ]; then
+          # This is the output path. It may not exist yet.
+          # If it's not already absolute, prepend the original pwd.
+          if [[ "$arg" != /* ]]; then
+            args+=("${original_pwd}/${arg}")
+          else
+            args+=("$arg")
+          fi
+          next_is_output=false
+        elif [ "$arg" = "-o" ];
+          args+=("-o")
+          next_is_output=true
+        elif [ -e "$arg" ]; then
+          # This is an existing input path. Use realpath to make it absolute.
+          args+=("$(realpath "$arg")")
+        else
+          # Any other argument (e.g., a Jinja template string for the output name)
+          args+=("$arg")
+        fi
+      done
+
+      # Now, change to the libexec directory
       cd "#{libexec}"
 
-      # Execute the script. Input paths are handled by the script itself now.
-      exec "#{Formula["babashka"].opt_bin}/bb" "fill_docx.bb" "$@"
+      # And execute the script with the fully resolved, absolute paths
+      exec "#{Formula["babashka"].opt_bin}/bb" "fill_docx.bb" "${args[@]}"
     EOS
   end
 
