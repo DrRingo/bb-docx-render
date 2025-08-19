@@ -15,32 +15,15 @@ class BbDocxRender < Formula
     libexec.install "fill_docx.bb", "pyproject.toml"
     (bin/"fill-docx").write <<~EOS
       #!/bin/bash
-      # This wrapper script solves two problems:
-      # 1. The `fill_docx.bb` script needs to run from the `libexec` directory
-      #    so that `uv` can find the `pyproject.toml` file.
-      # 2. User-provided arguments (like `./template.docx`) are relative to the
-      #    user's current working directory, not `libexec`.
-      #
-      # The solution is to convert all arguments that are existing file paths
-      # into absolute paths *before* changing the directory.
+      # Pass the user's original working directory to the script via an env var,
+      # so the script can resolve relative output paths correctly.
+      export BB_DOCX_RENDER_CWD="$(pwd)"
 
-      args=()
-      for arg in "$@"; do
-        # Check if the argument is an existing file or directory path
-        if [ -e "$arg" ]; then
-          # Convert it to an absolute path. `realpath` is standard.
-          args+=("$(realpath "$arg")")
-        else
-          # Otherwise, pass the argument as-is (e.g., flags like -o)
-          args+=("$arg")
-        fi
-      done
-
-      # Now, change to the libexec directory
+      # Change to the libexec directory so `uv` can find `pyproject.toml`.
       cd "#{libexec}"
 
-      # And execute the script with the resolved, absolute paths
-      exec "#{Formula["babashka"].opt_bin}/bb" "fill_docx.bb" "${args[@]}"
+      # Execute the script. Input paths are handled by the script itself now.
+      exec "#{Formula["babashka"].opt_bin}/bb" "fill_docx.bb" "$@"
     EOS
   end
 
