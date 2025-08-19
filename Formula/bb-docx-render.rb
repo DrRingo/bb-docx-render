@@ -13,7 +13,7 @@ class BbDocxRender < Formula
     # so we don't need to create a virtualenv with resources manually.
     # We just need to install the script and its config, then create a wrapper.
     libexec.install "fill_docx.bb", "pyproject.toml"
-    (bin/"fill-docx").write_script <<~EOS
+    (bin/"fill-docx").write <<~EOS
       #!/bin/bash
       # Change to the script's directory so `uv` can find pyproject.toml
       cd "#{libexec}"
