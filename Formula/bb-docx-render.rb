@@ -35,7 +35,7 @@ class BbDocxRender < Formula
             # The output path may not exist yet, so we can't use realpath.
             # If it's not absolute, prepend the original pwd.
             if [[ "$1" != /* && "$1" != ~* ]]; then
-              args+=("/${original_pwd}/$1")
+              args+=("${original_pwd}/$1")
             else
               args+=("$1")
             fi
