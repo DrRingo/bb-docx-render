@@ -24,26 +24,29 @@ class BbDocxRender < Formula
       next_is_output=false
       original_pwd="$(pwd)"
 
-      for arg in "$@"; do
-        if [ "$next_is_output" = true ]; then
-          # This is the output path. It may not exist yet.
-          # If it's not already absolute, prepend the original pwd.
-          if [[ "$arg" != /* ]]; then
-            args+=("${original_pwd}/${arg}")
-          else
-            args+=("$arg")
-          fi
-          next_is_output=false
-        elif [ "$arg" = "-o" ]; then
-          args+=("-o")
-          next_is_output=true
-        elif [ -e "$arg" ]; then
-          # This is an existing input path. Use realpath to make it absolute.
-          args+=("$(realpath "$arg")")
-        else
-          # Any other argument (e.g., a Jinja template string for the output name)
-          args+=("$arg")
-        fi
+      # Make all input paths absolute. The output path is special.
+      # The script itself will be run from libexec.
+      # All user-provided paths must be absolute.
+      while (( "$#" )); do
+        case "$1" in
+          -o)
+            args+=("-o")
+            shift
+            # The output path may not exist yet, so we can't use realpath.
+            # If it's not absolute, prepend the original pwd.
+            if [[ "$1" != /* && "$1" != ~* ]]; then
+              args+=("${original_pwd}/$1")
+            else
+              args+=("$1")
+            fi
+            shift
+            ;;
+          *)
+            # This is an input path. It must exist. Use realpath.
+            args+=("$(realpath "$1")")
+            shift
+            ;;
+        esac
       done
 
       # Now, change to the libexec directory

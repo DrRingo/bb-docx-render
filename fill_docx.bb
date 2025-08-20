@@ -56,7 +56,7 @@
                 "    is_abs = path.startswith('/')\n"
                 "    parts = []\n"
                 "    for part in re.split(r'[\\\\/]+', path):\n"
-                "        if part in ('', '.', '..'):\n"
+                "        if not part:\n"
                 "            continue\n"
                 "        parts.append(sanitize_filename(part))\n"
                 "    result = os.path.join(*parts) if parts else ''\n"
