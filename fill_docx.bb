@@ -8,7 +8,7 @@
 (defn usage []
   (println "Cách dùng:")
   (println "  bb fill_docx.bb <template.docx> <data.json> [-o output.docx|output-template]")
-  (println "  Ví dụ: -o 'out/{{ho_ten}} - {{ngay_sinh}}.docx'")
+  (println "  Ví dụ: -o 'out/{{msnv}}/{{ho_ten}}.docx'")
   (System/exit 1))
 
 (defn find-index [v x]
@@ -32,10 +32,8 @@
     (binding [*out* *err*] (println "Không tìm thấy JSON:" datafile))
     (System/exit 3))
 
-  ;; Tách thư mục và phần template tên file để bảo toàn path
-  (let [out-dir  (some-> output-tmpl fs/parent str) ; có thể là nil nếu không có thư mục
-        out-name (fs/file-name output-tmpl)
-        ;; Python code: render + sanitize + save
+  ;; Truyền template đường dẫn đầu ra trực tiếp cho Python
+  (let [;; Python code: render + sanitize + save
         pycode (str
                 "# -*- coding: utf-8 -*-\n"
                 "import sys, json, datetime, re, os\n"
@@ -54,31 +52,40 @@
                 "    name = name.replace(' ', '_')\n"
                 "    return re.sub(r'[<>:\\\":/\\\\|?*]+', '', name)\n"
                 "\n"
+                "def sanitize_path(path:str)->str:\n"
+                "    parts = []\n"
+                "    for part in re.split(r'[\\\\/]+', path):\n"
+                "        if part in ('', '.', '..'):\n"
+                "            continue\n"
+                "        parts.append(sanitize_filename(part))\n"
+                "    return os.path.join(*parts) if parts else ''\n"
+                "\n"
                 "def main():\n"
-                "    # args: <template.docx> <data.json> <output_dir> <output_name_template>\n"
-                "    if len(sys.argv) < 5:\n"
-                "        print('Usage: python - <template.docx> <data.json> <output_dir> <output_name_template>', file=sys.stderr)\n"
+                "    # args: <template.docx> <data.json> <output_path_template>\n"
+                "    if len(sys.argv) < 4:\n"
+                "        print('Usage: python - <template.docx> <data.json> <output_path_template>', file=sys.stderr)\n"
                 "        sys.exit(1)\n"
-                "    tpl_path, json_path, out_dir, out_name_tmpl = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]\n"
+                "    tpl_path, json_path, out_path_tmpl = sys.argv[1], sys.argv[2], sys.argv[3]\n"
                 "    with open(json_path, 'r', encoding='utf-8') as f:\n"
                 "        ctx = json.load(f)\n"
                 "    now = datetime.datetime.now()\n"
                 "    ctx.setdefault('_now', now)\n"
                 "    ctx.setdefault('_today', now.date().isoformat())\n"
-                "    # render file name (only the base name)\n"
-                "    if '{{' in out_name_tmpl:\n"
-                "        out_name = JEnv().from_string(out_name_tmpl).render(ctx)\n"
-                "    else:\n"
-                "        out_name = out_name_tmpl\n"
-                "    out_name = sanitize_filename(out_name)\n"
-                "    # full path\n"
-                "    if out_dir and len(out_dir.strip())>0:\n"
-                "        os.makedirs(out_dir, exist_ok=True)\n"
-                "        out_path = os.path.join(out_dir, out_name)\n"
-                "    else:\n"
-                "        out_path = out_name\n"
-                "    # render docx\n"
                 "    tpl = DocxTemplate(tpl_path)\n"
+                "    tpl.init_docx()\n"
+                "    xml_ctx = tpl.patch_xml(tpl.get_xml())\n"
+                "    module = JEnv().from_string(xml_ctx).make_module(ctx)\n"
+                "    for k in dir(module):\n"
+                "        if not k.startswith('_'):\n"
+                "            ctx.setdefault(k, getattr(module, k))\n"
+                "    if '{{' in out_path_tmpl:\n"
+                "        out_path_raw = JEnv().from_string(out_path_tmpl).render(ctx)\n"
+                "    else:\n"
+                "        out_path_raw = out_path_tmpl\n"
+                "    out_path = sanitize_path(out_path_raw)\n"
+                "    out_dir = os.path.dirname(out_path)\n"
+                "    if out_dir:\n"
+                "        os.makedirs(out_dir, exist_ok=True)\n"
                 "    tpl.render(ctx)\n"
                 "    tpl.save(out_path)\n"
                 "    try:\n"
@@ -95,11 +102,11 @@
                 (apply sh {:in pycode :out :string :err :string :env env} cmd)
                 (catch Exception _ {:exit 127 :out "" :err ""})))
         ;; Ưu tiên uv; nếu fail, fallback python3 -> python
-        r (or (let [r (run "uv" "run" "python" "-" template datafile (or out-dir "") out-name)]
+        r (or (let [r (run "uv" "run" "python" "-" template datafile output-tmpl)]
                 (when (zero? (:exit r)) r))
-              (let [r (run "python3" "-" template datafile (or out-dir "") out-name)]
+              (let [r (run "python3" "-" template datafile output-tmpl)]
                 (when (zero? (:exit r)) r))
-              (run "python" "-" template datafile (or out-dir "") out-name))]
+              (run "python" "-" template datafile output-tmpl))]
 
     (if (zero? (:exit r))
       (println "Đã tạo:" (str/trim (:out r)))
