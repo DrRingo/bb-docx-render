@@ -4,7 +4,11 @@ version = "0.1.0"
 description = "Render DOCX từ template bằng docxtpl (uv + Babashka)"
 requires-python = ">=3.10"
 authors = [{ name = "Ringo", email = "you@example.com" }]
-dependencies = ["docxtpl", "jinja2", "python-docx"]
+dependencies = [
+    "docxtpl",
+    "jinja2",
+    "python-docx",
+]
 
 [tool.uv]
 # Không cài đặt project như package
