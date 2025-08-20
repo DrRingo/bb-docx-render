@@ -2,7 +2,7 @@ class BbDocxRender < Formula
   desc "Render DOCX templates using Babashka and Python"
   homepage "https://github.com/DrRingo/bb-docx-render"
   url "https://github.com/DrRingo/bb-docx-render/archive/refs/tags/0.1.1.tar.gz"
-  sha256 "a77c9522fcb74966d18d94bc7ba4db097da251fe"
+  sha256 "af9af63214c23a2194de15ce2d830164112c913f9c75825200e2dd412b726fce"
   license "Apache-2.0"
 
   depends_on "babashka"
