@@ -2,12 +2,12 @@
  :deps  {cheshire/cheshire {:mvn/version "5.13.0"}}
 
  ;; Cấu hình để bbin tạo “binary” bb-docx-render
- ;; Sau khi cài bằng bbin, bạn có thể gõ: bb-docx-render template.docx data.json -o '{{...}}.docx'
+ ;; Sau khi cài bằng bbin, bạn có thể gõ: bb-docx-render template.docx data.json|data.yaml|data.toml -o '{{...}}.docx'
  :bbin/bin
  {bb-docx-render {:main-opts ["fill_docx.bb"]}}
  :tasks
  {docx:fill
-  {:doc "Điền JSON vào template DOCX bằng docxtpl (uv env). Usage: bb docx:fill <template.docx> <data.json> [-o output.docx|output-template]"
+  {:doc "Điền dữ liệu (JSON/YAML/TOML) vào template DOCX bằng docxtpl (uv env). Usage: bb docx:fill <template.docx> <data.json|data.yaml|data.toml> [-o output.docx|output-template]"
    :requires ([babashka.process :refer [shell]])
    :task (let [args *command-line-args*]
            ;; chạy script bằng python của uv env
@@ -17,5 +17,5 @@
   docx:install
   {:doc "Cài docxtpl vào uv env"
    :task ((requiring-resolve 'babashka.process/shell)
-          "uv" "add" "docxtpl" "jinja2" "python-docx")}}}
+          "uv" "add" "docxtpl" "jinja2" "python-docx" "pyyaml" "tomli")}}}
 

@@ -7,7 +7,7 @@
 
 (defn usage []
   (println "Cách dùng:")
-  (println "  bb fill_docx.bb <template.docx> <data.json> [-o output.docx|output-template]")
+  (println "  bb fill_docx.bb <template.docx> <data.json|data.yaml|data.toml> [-o output.docx|output-template]")
   (println "  Ví dụ: -o 'out/{{msnv}}/{{ho_ten}}.docx'")
   (System/exit 1))
 
@@ -29,7 +29,7 @@
     (binding [*out* *err*] (println "Không tìm thấy template:" template))
     (System/exit 2))
   (when-not (fs/exists? datafile)
-    (binding [*out* *err*] (println "Không tìm thấy JSON:" datafile))
+    (binding [*out* *err*] (println "Không tìm thấy file dữ liệu:" datafile))
     (System/exit 3))
 
   ;; Truyền template đường dẫn đầu ra trực tiếp cho Python
@@ -49,6 +49,22 @@
                 "os.environ.setdefault('PYTHONIOENCODING','utf-8')\n"
                 "os.environ.setdefault('PYTHONUTF8','1')\n"
                 "\n"
+                "def load_data(path:str):\n"
+                "    suf = Path(path).suffix.lower()\n"
+                "    with open(path, 'rb') as f:\n"
+                "        data = f.read()\n"
+                "    if suf in ['.yaml', '.yml']:\n"
+                "        import yaml\n"
+                "        return yaml.safe_load(data.decode('utf-8'))\n"
+                "    elif suf == '.toml':\n"
+                "        try:\n"
+                "            import tomllib\n"
+                "        except ModuleNotFoundError:\n"
+                "            import tomli as tomllib\n"
+                "        return tomllib.loads(data.decode('utf-8'))\n"
+                "    else:\n"
+                "        return json.loads(data.decode('utf-8'))\n"
+                "\n"
                 "def sanitize_filename(name:str)->str:\n"
                 "    name = name.replace(' ', '_')\n"
                 "    return re.sub(r'[<>:\\\":/\\\\|?*]+', '', name)\n"
@@ -62,13 +78,12 @@
                 "    return str(sanitized)\n"
                 "\n"
                 "def main():\n"
-                "    # args: <template.docx> <data.json> <output_path_template>\n"
+                "    # args: <template.docx> <data.json|data.yaml|data.toml> <output_path_template>\n"
                 "    if len(sys.argv) < 4:\n"
-                "        print('Usage: python - <template.docx> <data.json> <output_path_template>', file=sys.stderr)\n"
+                "        print('Usage: python - <template.docx> <data.(json|yaml|toml)> <output_path_template>', file=sys.stderr)\n"
                 "        sys.exit(1)\n"
-                "    tpl_path, json_path, out_path_tmpl = sys.argv[1], sys.argv[2], sys.argv[3]\n"
-                "    with open(json_path, 'r', encoding='utf-8') as f:\n"
-                "        ctx = json.load(f)\n"
+                "    tpl_path, data_path, out_path_tmpl = sys.argv[1], sys.argv[2], sys.argv[3]\n"
+                "    ctx = load_data(data_path)\n"
                 "    now = datetime.datetime.now()\n"
                 "    ctx.setdefault('_now', now)\n"
                 "    ctx.setdefault('_today', now.date().isoformat())\n"
@@ -113,6 +128,6 @@
         (binding [*out* *err*]
           (println (str/trim (:err r)))
           (println "Gợi ý:")
-          (println " - Dùng uv và cài deps: uv add docxtpl jinja2 python-docx, rồi chạy lại.")
-          (println " - Hoặc fallback cài pip cho python3: pip3 install --user docxtpl jinja2 python-docx"))
+          (println " - Dùng uv và cài deps: uv add docxtpl jinja2 python-docx pyyaml tomli, rồi chạy lại.")
+          (println " - Hoặc fallback cài pip cho python3: pip3 install --user docxtpl jinja2 python-docx pyyaml tomli"))
         (System/exit (:exit r))))))
