@@ -1,4 +1,4 @@
-# fill_docx — Điền dữ liệu JSON vào template DOCX (tên file cũng động)
+# fill_docx — Điền dữ liệu JSON/YAML/TOML vào template DOCX (tên file cũng động)
 
 `fill_docx.bb` là script **Babashka** dùng **Python + docxtpl** (chạy trong **uv env**) để:
 - Render nội dung từ `template.docx` theo cú pháp **Jinja** (`{{ var }}`, `{% for %}`, `{% if %}`).
@@ -18,6 +18,8 @@
 - `docxtpl`
 - `jinja2`
 - `python-docx`
+- `pyyaml`
+- `tomli`
 
 > Script gọi Python qua: `uv run python -` để chắc chắn dùng đúng môi trường uv.
 
@@ -53,14 +55,14 @@ bb-docx-runner/
 ├─ fill_docx.bb
 ├─ bb.edn                (tùy chọn, nếu dùng task)
 ├─ template.docx         (mẫu)
-└─ data.json             (dữ liệu)
+└─ data.json|data.yaml|data.toml  (dữ liệu)
 ```
 
 ### 2) Khởi tạo uv & cài dependencies
 ```bash
 cd bb-docx-runner
 uv init
-uv add docxtpl jinja2 python-docx
+uv add docxtpl jinja2 python-docx pyyaml tomli
 ```
 
 *(Nếu dùng **task** của Babashka, thêm `bb.edn` như bên dưới.)*
@@ -75,16 +77,20 @@ uv add docxtpl jinja2 python-docx
 ```bash
 # render + đặt tên file bằng template Jinja (lưu ý dùng NHÁY ĐƠN để giữ {{ }})
 bb fill_docx.bb template.docx data.json -o '{{ho_ten}} - {{ngay_sinh}}.docx'
+# hoặc:
+bb fill_docx.bb template.docx data.yaml -o '{{ho_ten}} - {{ngay_sinh}}.docx'
 ```
 
 #### Windows PowerShell
 ```powershell
 # Dùng NHÁY ĐƠN để giữ nguyên {{ }}
 bb fill_docx.bb template.docx data.json -o '{{ho_ten}} - {{ngay_sinh}}.docx'
+# hoặc:
+bb fill_docx.bb template.docx data.toml -o '{{ho_ten}} - {{ngay_sinh}}.docx'
 ```
 
 > Script sẽ:
-> - Mở `data.json` (UTF-8)
+> - Mở file dữ liệu (`.json`, `.yaml`, `.toml`) dạng UTF-8
 > - Render nội dung `template.docx` bằng Jinja
 > - Render **tên file** từ `-o` (nếu có `{{ }}`), sau đó đổi khoảng trắng thành `_` và loại bỏ ký tự cấm
 > - Lưu file DOCX đầu ra và in đường dẫn đã tạo
@@ -98,7 +104,7 @@ Tạo file `bb.edn`:
  :deps  {cheshire/cheshire {:mvn/version "5.13.0"}}
  :tasks
 {docx:fill
- {:doc "Điền JSON vào template DOCX (uv env). Usage: bb docx:fill <template.docx> <data.json> [-o output.docx|template]"
+ {:doc "Điền dữ liệu (JSON/YAML/TOML) vào template DOCX (uv env). Usage: bb docx:fill <template.docx> <data.json|data.yaml|data.toml> [-o output.docx|template]"
   :requires ([babashka.process :refer [shell]])
   :task (let [args *command-line-args*]
           (apply shell (concat ["uv" "run" "bb" "fill_docx.bb"] args)))}}}
@@ -113,7 +119,7 @@ bb docx:fill template.docx data.json -o '{{ho_ten}} - {{ngay_sinh}}.docx'
 
 **Windows PowerShell**
 ```powershell
-bb docx:fill template.docx data.json -o '{{ho_ten}} - {{ngay_sinh}}.docx'
+bb docx:fill template.docx data.toml -o '{{ho_ten}} - {{ngay_sinh}}.docx'
 ```
 
 ---
@@ -143,7 +149,7 @@ bb docx:fill template.docx data.json -o '{{ho_ten}} - {{ngay_sinh}}.docx'
 
 ---
 
-## Ví dụ `data.json`
+## Ví dụ dữ liệu
 ```json
 {
   "ho_ten": "Nguyễn Văn A",
@@ -154,6 +160,35 @@ bb docx:fill template.docx data.json -o '{{ho_ten}} - {{ngay_sinh}}.docx'
     {"ten": "Mục 2", "so_luong": 1, "gia": 120000}
   ]
 }
+```
+
+```yaml
+ho_ten: Nguyễn Văn A
+ngay_sinh: 1990-05-20
+so_tien: 15000000
+ds_muc:
+  - ten: Mục 1
+    so_luong: 2
+    gia: 50000
+  - ten: Mục 2
+    so_luong: 1
+    gia: 120000
+```
+
+```toml
+ho_ten = "Nguyễn Văn A"
+ngay_sinh = "1990-05-20"
+so_tien = 15000000
+
+[[ds_muc]]
+ten = "Mục 1"
+so_luong = 2
+gia = 50000
+
+[[ds_muc]]
+ten = "Mục 2"
+so_luong = 1
+gia = 120000
 ```
 
 ---
@@ -175,8 +210,8 @@ Dùng tham số `-o` với template Jinja (nhớ **nháy đơn**):
 
 ## Lưu ý quan trọng
 
-- **Encoding**:  
-  - `data.json` nên là UTF-8.  
+- **Encoding**:
+  - File dữ liệu (`.json`, `.yaml`, `.toml`) nên là UTF-8.
   - Script đã ép IO Python UTF-8 để in tiếng Việt ổn trên nhiều môi trường.
 - **Shell quoting**:
   - Linux/WSL/macOS: dùng **nháy đơn** `'{{...}}'`.  
@@ -184,7 +219,7 @@ Dùng tham số `-o` với template Jinja (nhớ **nháy đơn**):
   - CMD: có thể dùng nháy kép `"` nhưng nên thử trước.
 - **uv**:
   - Script luôn gọi `uv run python`, nên bạn **không cần** tạo venv thủ công.
-  - Nếu thấy lỗi “No module named docxtpl”: chạy `uv add docxtpl jinja2 python-docx`.
+  - Nếu thấy lỗi “No module named docxtpl”: chạy `uv add docxtpl jinja2 python-docx pyyaml tomli`.
 
 ---
 

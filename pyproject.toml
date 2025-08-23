@@ -8,6 +8,8 @@ dependencies = [
     "docxtpl",
     "jinja2",
     "python-docx",
+    "PyYAML",
+    "tomli",
 ]
 
 [tool.uv]
