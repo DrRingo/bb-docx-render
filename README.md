@@ -44,7 +44,7 @@ fill-docx template.docx data.json -o "out/{{ho_ten}}_{{_today}}.docx"
 [bbin](https://github.com/babashka/bbin) cài script trực tiếp từ GitHub, không cần clone thủ công.
 
 ```bash
-bbin install https://github.com/DrRingo/bb-docx-render
+bbin install io.github.DrRingo/bb-docx-render
 ```
 
 Sau khi cài, lệnh `bb-docx-render` có sẵn. Cài Python deps lần đầu:
