@@ -1,209 +1,411 @@
-# fill_docx — Điền dữ liệu JSON vào template DOCX (tên file cũng động)
+# bb-docx-render — Render DOCX từ template Jinja2
 
-`fill_docx.bb` là script **Babashka** dùng **Python + docxtpl** (chạy trong **uv env**) để:
-- Render nội dung từ `template.docx` theo cú pháp **Jinja** (`{{ var }}`, `{% for %}`, `{% if %}`).
-- **Đặt tên file đầu ra động** theo template (cũng dùng Jinja), ví dụ: `-o '{{ho_ten}} - {{ngay_sinh}}.docx'`.
-- Tự **chuẩn hóa tên file**: thay khoảng trắng thành `_` và loại bỏ ký tự không hợp lệ (`<>:"/\|?*`).
+Điền dữ liệu từ **JSON / YAML / TOML** vào file **DOCX template** (cú pháp Jinja2), tạo file DOCX đầu ra với tên file động.
+
+```
+fill-docx template.docx data.json -o "out/{{ho_ten}}_{{_today}}.docx"
+```
 
 ---
 
-## Yêu cầu & Dependencies
+## Mục lục
 
-### Bắt buộc
-- **Babashka** (chạy script `.bb`)
-- **uv** (quản lý môi trường Python)
-- **Python** (được uv cài theo env của dự án)
+1. [Yêu cầu](#yêu-cầu)
+2. [Cài đặt](#cài-đặt)
+   - [bbin](#1-bbin-mọi-nền-tảng-có-babashka)
+   - [Homebrew](#2-homebrew-macos--linux)
+   - [Scoop](#3-scoop-windows)
+   - [Thủ công](#4-cài-thủ-công)
+3. [Hướng dẫn sử dụng](#hướng-dẫn-sử-dụng)
+4. [Cú pháp template](#cú-pháp-template)
+5. [Định dạng dữ liệu](#định-dạng-dữ-liệu)
+6. [Tình huống thực tế](#tình-huống-thực-tế)
+7. [Khắc phục sự cố](#khắc-phục-sự-cố)
 
-### Thư viện Python (cài bằng uv)
-- `docxtpl`
-- `jinja2`
-- `python-docx`
+---
 
-> Script gọi Python qua: `uv run python -` để chắc chắn dùng đúng môi trường uv.
+## Yêu cầu
+
+| Công cụ | Bắt buộc | Ghi chú |
+|---------|----------|---------|
+| **Babashka** (`bb`) | Bắt buộc | Chạy script `.bb` |
+| **uv** | Khuyến nghị | Quản lý Python env tự động |
+| **Python ≥ 3.10** | Fallback | Nếu không dùng `uv`, cần cài thêm deps thủ công |
+
+**Thư viện Python** (uv cài tự động từ `pyproject.toml`):  
+`docxtpl`, `jinja2`, `python-docx`, `pyyaml`, `tomli` (Python 3.10)
 
 ---
 
 ## Cài đặt
 
-### Cài đặt qua Homebrew (macOS/Linux)
+### 1. bbin (mọi nền tảng có Babashka)
 
-Script đã được đóng gói thành công thức Homebrew, tự động kéo theo Babashka, Python và các thư viện cần thiết. Cài đặt nhanh bằng:
+[bbin](https://github.com/babashka/bbin) cài script trực tiếp từ GitHub, không cần clone thủ công.
+
+```bash
+bbin install https://github.com/DrRingo/bb-docx-render
+```
+
+Sau khi cài, lệnh `bb-docx-render` có sẵn. Cài Python deps lần đầu:
+
+```bash
+# Từ thư mục bất kỳ có pyproject.toml, hoặc chỉ định --project
+uv add docxtpl jinja2 python-docx pyyaml
+```
+
+> **Lưu ý bbin:** `uv` tự tìm `pyproject.toml` từ thư mục chứa script (nhờ `--project` nội bộ), không cần chạy `uv init` thêm.
+
+---
+
+### 2. Homebrew (macOS / Linux)
 
 ```bash
 brew tap drringo/bb-docx-render https://github.com/drringo/bb-docx-render
 brew install bb-docx-render
 ```
 
-Sau khi cài, lệnh `fill-docx` có sẵn để sử dụng ngay.
+Sau khi cài, lệnh `fill-docx` có sẵn. Lần đầu dùng, `uv` sẽ tự tải deps.
 
-### Cài đặt qua Scoop (Windows)
+---
 
-Manifest Scoop có sẵn để cài đặt nhanh trong PowerShell:
+### 3. Scoop (Windows)
 
 ```powershell
 scoop install https://raw.githubusercontent.com/DrRingo/bb-docx-render/main/scoop/bb-docx-render.json
 ```
 
-Sau khi cài, lệnh `fill-docx` có sẵn để sử dụng ngay.
+Sau khi cài, lệnh `fill-docx` có sẵn trong PowerShell.
 
-### 1) Clone / copy project
-Đặt các file trong một thư mục, ví dụ `bb-docx-runner/`:
-```
-bb-docx-runner/
-├─ fill_docx.bb
-├─ bb.edn                (tùy chọn, nếu dùng task)
-├─ template.docx         (mẫu)
-└─ data.json             (dữ liệu)
-```
+---
 
-### 2) Khởi tạo uv & cài dependencies
+### 4. Cài thủ công
+
 ```bash
-cd bb-docx-runner
-uv init
-uv add docxtpl jinja2 python-docx
+git clone https://github.com/DrRingo/bb-docx-render
+cd bb-docx-render
+uv sync          # cài Python deps vào .venv
 ```
 
-*(Nếu dùng **task** của Babashka, thêm `bb.edn` như bên dưới.)*
+Chạy trực tiếp:
+
+```bash
+bb fill_docx.bb template.docx data.json -o output.docx
+```
+
+Hoặc thêm task `docx:fill` vào `bb.edn` để gọi ngắn hơn.
 
 ---
 
 ## Hướng dẫn sử dụng
 
-### A) Chạy trực tiếp script Babashka (uv env)
+### Cú pháp lệnh
 
-#### Linux / WSL / macOS
+```
+fill-docx <template.docx> <data.json|yaml|toml> [-o <output>]
+```
+
+| Tham số | Mô tả |
+|---------|-------|
+| `template.docx` | File DOCX mẫu chứa cú pháp Jinja2 |
+| `data.json\|yaml\|toml` | File dữ liệu (JSON, YAML hoặc TOML) |
+| `-o <output>` | Đường dẫn đầu ra. Có thể là tên file cố định hoặc **template Jinja2**. Mặc định: `output.docx` |
+
+### Ví dụ nhanh
+
 ```bash
-# render + đặt tên file bằng template Jinja (lưu ý dùng NHÁY ĐƠN để giữ {{ }})
-bb fill_docx.bb template.docx data.json -o '{{ho_ten}} - {{ngay_sinh}}.docx'
-```
+# Tên file cố định
+fill-docx template.docx data.json -o output.docx
 
-#### Windows PowerShell
-```powershell
-# Dùng NHÁY ĐƠN để giữ nguyên {{ }}
-bb fill_docx.bb template.docx data.json -o '{{ho_ten}} - {{ngay_sinh}}.docx'
-```
+# Tên file động từ dữ liệu
+fill-docx template.docx data.json -o "out/{{ho_ten}}_{{_today}}.docx"
 
-> Script sẽ:
-> - Mở `data.json` (UTF-8)
-> - Render nội dung `template.docx` bằng Jinja
-> - Render **tên file** từ `-o` (nếu có `{{ }}`), sau đó đổi khoảng trắng thành `_` và loại bỏ ký tự cấm
-> - Lưu file DOCX đầu ra và in đường dẫn đã tạo
+# Dùng YAML
+fill-docx template.docx data.yaml -o "{{ho_ten}}.docx"
 
-### B) Chạy qua `bb.edn` (ngắn gọn hơn)
+# Dùng TOML
+fill-docx template.docx config.toml -o "report.docx"
 
-Tạo file `bb.edn`:
-
-```clojure
-{:paths ["."]
- :deps  {cheshire/cheshire {:mvn/version "5.13.0"}}
- :tasks
-{docx:fill
- {:doc "Điền JSON vào template DOCX (uv env). Usage: bb docx:fill <template.docx> <data.json> [-o output.docx|template]"
-  :requires ([babashka.process :refer [shell]])
-  :task (let [args *command-line-args*]
-          (apply shell (concat ["uv" "run" "bb" "fill_docx.bb"] args)))}}}
-```
-
-Chạy:
-
-**Linux / WSL / macOS**
-```bash
-bb docx:fill template.docx data.json -o '{{ho_ten}} - {{ngay_sinh}}.docx'
-```
-
-**Windows PowerShell**
-```powershell
-bb docx:fill template.docx data.json -o '{{ho_ten}} - {{ngay_sinh}}.docx'
+# Tạo thư mục con tự động
+fill-docx template.docx data.json -o "out/{{msnv}}/{{ho_ten}}.docx"
 ```
 
 ---
 
-## Cú pháp trong `template.docx`
+## Cú pháp template
 
-- Biến đơn:
-  ```
-  {{ ho_ten }}, {{ ngay_sinh }}, {{ _today }}
-  ```
-- Vòng lặp:
-  ```
-  {% for item in ds_muc %}
-  - {{ item.ten }} (SL: {{ item.so_luong }}, Giá: {{ item.gia }})
-  {% endfor %}
-  ```
-- Điều kiện:
-  ```
-  {% if so_tien > 1000000 %}
-  Số tiền lớn.
-  {% endif %}
-  ```
+Soạn thảo `template.docx` trong Word với cú pháp Jinja2 nguyên bản:
 
-> Script tự thêm biến tiện ích:  
-> - `_now` (datetime hiện tại)  
-> - `_today` (YYYY-MM-DD)
+### Biến đơn giản
+
+```
+Họ tên: {{ ho_ten }}
+Ngày sinh: {{ ngay_sinh }}
+Hôm nay: {{ _today }}
+```
+
+### Điều kiện
+
+```
+{% if so_tien > 1000000 %}
+Số tiền lớn hơn 1 triệu đồng.
+{% else %}
+Số tiền nhỏ hơn 1 triệu đồng.
+{% endif %}
+```
+
+### Vòng lặp
+
+```
+{% for item in ds_muc %}
+- {{ item.ten }}: {{ item.so_luong }} x {{ item.gia }} VNĐ
+{% endfor %}
+```
+
+### Filter built-in của Jinja2
+
+```
+{{ ho_ten | upper }}          {# IN HOA #}
+{{ ho_ten | lower }}          {# in thường #}
+{{ so_tien | int }}           {# ép kiểu số nguyên #}
+{{ ghi_chu | default("Không có") }}  {# giá trị mặc định #}
+```
+
+### Biến tiện ích tự động
+
+Script tự thêm các biến sau vào context:
+
+| Biến | Kiểu | Ví dụ |
+|------|------|-------|
+| `_today` | `str` | `"2026-02-22"` |
+| `_now` | `datetime` | `datetime.datetime(2026, 2, 22, 9, 0, 0)` |
 
 ---
 
-## Ví dụ `data.json`
+## Định dạng dữ liệu
+
+Script nhận diện định dạng tự động qua phần mở rộng file.
+
+### JSON (`.json`)
+
 ```json
 {
   "ho_ten": "Nguyễn Văn A",
   "ngay_sinh": "1990-05-20",
   "so_tien": 15000000,
   "ds_muc": [
-    {"ten": "Mục 1", "so_luong": 2, "gia": 50000},
-    {"ten": "Mục 2", "so_luong": 1, "gia": 120000}
+    { "ten": "Mục 1", "so_luong": 2, "gia": 50000 },
+    { "ten": "Mục 2", "so_luong": 1, "gia": 120000 }
   ]
 }
+```
+
+### YAML (`.yaml` / `.yml`)
+
+```yaml
+ho_ten: Nguyễn Văn A
+ngay_sinh: "1990-05-20"
+so_tien: 15000000
+ds_muc:
+  - ten: Mục 1
+    so_luong: 2
+    gia: 50000
+  - ten: Mục 2
+    so_luong: 1
+    gia: 120000
+```
+
+### TOML (`.toml`)
+
+```toml
+ho_ten = "Nguyễn Văn A"
+ngay_sinh = "1990-05-20"
+so_tien = 15000000
+
+[[ds_muc]]
+ten = "Mục 1"
+so_luong = 2
+gia = 50000
+
+[[ds_muc]]
+ten = "Mục 2"
+so_luong = 1
+gia = 120000
+```
+
+---
+
+## Tình huống thực tế
+
+### Tình huống 1 — Hợp đồng đơn giản
+
+Tạo một hợp đồng từ template với dữ liệu JSON:
+
+```bash
+fill-docx hop-dong-mau.docx khach-hang.json -o "HopDong_{{ho_ten}}_{{_today}}.docx"
+```
+
+Kết quả: `HopDong_Nguyen_Van_A_2026-02-22.docx`
+
+---
+
+### Tình huống 2 — Phiếu xuất viện theo bệnh nhân
+
+Template có nhiều biến y tế, dữ liệu là YAML:
+
+```bash
+fill-docx phieu-xuat-vien.docx benh-nhan.yaml \
+  -o "xuat-vien/{{msnv}}/TTBA_{{hoten}}_{{ngayrv}}.docx"
+```
+
+Kết quả: `xuat-vien/052078/TTBA_Sam_Thi_Luu_Ly_03_08_2025.docx`
+
+---
+
+### Tình huống 3 — Chứng nhận / Chứng chỉ hàng loạt (batch shell script)
+
+Với nhiều học viên, viết vòng lặp shell tạo từng file:
+
+**Linux / macOS / WSL:**
+
+```bash
+for f in data/hocvien_*.json; do
+  fill-docx chung-chi-mau.docx "$f" -o "out/ChungChi_{{ho_ten}}.docx"
+done
+```
+
+**Windows PowerShell:**
+
+```powershell
+Get-ChildItem data\hocvien_*.json | ForEach-Object {
+    fill-docx chung-chi-mau.docx $_.FullName -o "out\ChungChi_{{ho_ten}}.docx"
+}
+```
+
+---
+
+### Tình huống 4 — Tên file đầu ra có thư mục con động
+
+Dùng `-o` với thư mục lồng nhau; script tự tạo thư mục:
+
+```bash
+fill-docx template.docx data.json -o "out/{{phong_ban}}/{{nam}}/{{ho_ten}}.docx"
+```
+
+Tạo ra: `out/Ke_Toan/2026/Nguyen_Van_A.docx`
+
+---
+
+### Tình huống 5 — Dữ liệu TOML từ config dự án
+
+Nếu dự án đã dùng TOML (như `pyproject.toml` mở rộng):
+
+```bash
+fill-docx bao-cao-mau.docx project-config.toml -o "BaoCao_{{project_name}}.docx"
+```
+
+---
+
+### Tình huống 6 — Chạy qua task Babashka (`bb.edn`)
+
+Nếu dùng trực tiếp từ source với `bb.edn`:
+
+```bash
+# Linux / macOS
+bb docx:fill template.docx data.json -o "out/{{ho_ten}}.docx"
+
+# Windows PowerShell (nháy đơn để giữ {{ }})
+bb docx:fill template.docx data.json -o 'out/{{ho_ten}}.docx'
+```
+
+Cài deps Python lần đầu:
+
+```bash
+bb docx:install
 ```
 
 ---
 
 ## Tên file đầu ra động
 
-Dùng tham số `-o` với template Jinja (nhớ **nháy đơn**):
+Tham số `-o` hỗ trợ cú pháp Jinja2 để tạo tên file động:
 
-```bash
--o '{{ho_ten}} - {{ngay_sinh}}.docx'
+```
+-o "out/{{msnv}}/{{ho_ten}}_{{_today}}.docx"
 ```
 
-- Render ra chuỗi, **đổi khoảng trắng → `_`**, và loại ký tự không hợp lệ.  
-  Ví dụ: `Nguyễn Văn A - 1990-05-20.docx` → `Nguyễn_Văn_A_-_1990-05-20.docx`
+Script tự động:
+- **Render** chuỗi với dữ liệu từ file data
+- **Đổi khoảng trắng thành `_`**
+- **Xóa ký tự không hợp lệ** trong tên file/path (`< > : " / \ | ? *`)
+- **Tạo thư mục** nếu chưa tồn tại
 
-> Nếu cần **bỏ dấu tiếng Việt** trong tên file, có thể bổ sung bước normalize (chưa bật mặc định).
-
----
-
-## Lưu ý quan trọng
-
-- **Encoding**:  
-  - `data.json` nên là UTF-8.  
-  - Script đã ép IO Python UTF-8 để in tiếng Việt ổn trên nhiều môi trường.
-- **Shell quoting**:
-  - Linux/WSL/macOS: dùng **nháy đơn** `'{{...}}'`.  
-  - PowerShell: cũng nên dùng **nháy đơn**.  
-  - CMD: có thể dùng nháy kép `"` nhưng nên thử trước.
-- **uv**:
-  - Script luôn gọi `uv run python`, nên bạn **không cần** tạo venv thủ công.
-  - Nếu thấy lỗi “No module named docxtpl”: chạy `uv add docxtpl jinja2 python-docx`.
+Ví dụ: `"Nguyễn Văn A - 1990-05-20.docx"` → `Nguyễn_Văn_A_-_1990-05-20.docx`
 
 ---
 
 ## Khắc phục sự cố
 
-- **Không có Python/uv**: Cài uv theo hướng dẫn của uv, rồi `uv add ...`.
-- **WSL báo PEP 668 / externally-managed**: Không ảnh hưởng vì ta dùng uv (venv riêng). Đừng cài system-wide bằng `pip`.
-- **UnicodeEncodeError khi in tên file**: Script đã reconfigure stdout UTF-8. Nếu console vẫn lỗi hiển thị, file vẫn được tạo đúng; bạn có thể đặt UTF-8 cho terminal (VD: `chcp 65001` trên CMD, hoặc cấu hình profile PowerShell).
+### `No module named 'docxtpl'`
+
+`uv` chưa cài deps. Chạy:
+
+```bash
+uv add docxtpl jinja2 python-docx pyyaml
+```
+
+Hoặc nếu không dùng `uv`:
+
+```bash
+pip3 install --user docxtpl jinja2 python-docx pyyaml
+```
+
+### `No module named 'yaml'` (khi đọc file YAML)
+
+```bash
+uv add pyyaml
+# hoặc
+pip3 install --user pyyaml
+```
+
+### `No module named 'tomllib'` / `'tomli'` (khi đọc file TOML trên Python 3.10)
+
+```bash
+uv add tomli
+# hoặc
+pip3 install --user tomli
+```
+
+### `uv run` lỗi `os error 5` trên Windows
+
+File trong `.venv` đang bị Dropbox / OneDrive lock. Giải pháp:
+- Tạm dừng đồng bộ cloud drive rồi chạy lại, hoặc
+- Chuyển project ra ngoài thư mục sync cloud.
+
+### Ký tự Unicode trong tên file không hiển thị đúng trên CMD Windows
+
+Chạy `chcp 65001` trước khi dùng tool, hoặc dùng PowerShell. File DOCX vẫn được tạo đúng dù terminal hiển thị sai.
+
+### `Không tìm thấy render.py`
+
+`render.py` phải nằm cùng thư mục với `fill_docx.bb`. Khi cài qua brew/scoop/bbin điều này được đảm bảo tự động. Nếu clone thủ công, đảm bảo cả hai file cùng thư mục.
 
 ---
 
-## Kiến trúc & bảo trì
+## Kiến trúc
 
-- `fill_docx.bb` bơm Python code qua stdin (`python -`) để không cần file tạm.  
-- Mọi dependency Python nằm trong uv env → không “bẩn” hệ thống.
-- Dễ mở rộng: thêm format tiền tệ, chèn ảnh (`InlineImage`), hoặc tiền xử lý tên file (bỏ dấu, lower-case, v.v.).
+```
+fill_docx.bb          ← Script Babashka: parse args, tìm render.py, gọi Python
+render.py             ← Python: đọc data, render DOCX bằng docxtpl + Jinja2
+pyproject.toml        ← Khai báo deps Python cho uv
+uv.lock               ← Lock file để uv reproduce môi trường nhanh
+```
+
+- `fill_docx.bb` đọc `render.py` bằng `slurp` rồi truyền vào Python qua stdin — không cần file tạm.
+- `uv run --project <script-dir>` đảm bảo Python luôn tìm đúng môi trường, bất kể user chạy từ thư mục nào.
 
 ---
 
 ## Giấy phép
 
-Apache License 2.0 - Xem file `LICENSE` để biết chi tiết.
+Apache License 2.0 — Xem file [`LICENSE`](LICENSE) để biết chi tiết.

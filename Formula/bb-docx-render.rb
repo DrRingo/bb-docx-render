@@ -5,35 +5,36 @@ class BbDocxRender < Formula
   sha256 "af9af63214c23a2194de15ce2d830164112c913f9c75825200e2dd412b726fce"
   license "Apache-2.0"
 
+  # uv manages its own Python runtime; babashka is the script runner.
   depends_on "babashka"
   depends_on "uv"
 
   def install
-    # The script uses `uv` to manage its own Python environment based on pyproject.toml,
-    # so we don't need to create a virtualenv with resources manually.
-    # We just need to install the script and its config, then create a wrapper.
-    libexec.install "fill_docx.bb", "pyproject.toml"
+    # Install all runtime files to libexec.
+    # fill_docx.bb uses `--project libexec` so uv finds pyproject.toml here.
+    # uv.lock is included so uv can resolve deps from cache without re-solving.
+    libexec.install "fill_docx.bb", "render.py", "pyproject.toml", "uv.lock"
+
     (bin/"fill-docx").write <<~EOS
       #!/bin/bash
-      # This is the definitive wrapper script.
-      # Problem: The `fill_docx.bb` script (from the source tarball) must run from
-      # `libexec` for `uv` to work, but all user-provided paths are relative to `pwd`.
-      # Solution: Make ALL paths absolute before changing directory.
+      # Wrapper for fill-docx installed via Homebrew.
+      #
+      # Problem: fill_docx.bb must run from libexec (where pyproject.toml lives),
+      # but user-provided paths are relative to the user's cwd.
+      # Solution: resolve all user paths to absolute BEFORE cd-ing to libexec.
+
+      set -euo pipefail
 
       args=()
-      next_is_output=false
       original_pwd="$(pwd)"
 
-      # Make all input paths absolute. The output path is special.
-      # The script itself will be run from libexec.
-      # All user-provided paths must be absolute.
       while (( "$#" )); do
         case "$1" in
           -o)
             args+=("-o")
             shift
-            # The output path may not exist yet, so we can't use realpath.
-            # If it's not absolute, prepend the original pwd.
+            # Output path may not exist yet — can't use realpath.
+            # If relative, prepend original pwd.
             if [[ "$1" != /* && "$1" != ~* ]]; then
               args+=("${original_pwd}/$1")
             else
@@ -42,22 +43,23 @@ class BbDocxRender < Formula
             shift
             ;;
           *)
-            # This is an input path. It must exist. Use realpath.
-            args+=("$(realpath "$1")")
+            # Input path must exist — use realpath with -- to handle paths
+            # that might start with a dash.
+            args+=("$(realpath -- "$1")")
             shift
             ;;
         esac
       done
 
-      # Now, change to the libexec directory
       cd "#{libexec}"
-
-      # And execute the script with the fully resolved, absolute paths
       exec "#{Formula["babashka"].opt_bin}/bb" "fill_docx.bb" "${args[@]}"
     EOS
   end
 
   test do
-    assert_match "Cách dùng", shell_output("#{bin}/fill-docx 2>&1", 1)
+    # Verify the wrapper runs and prints usage (exit 1 = expected with no args).
+    # Using ASCII-safe pattern that appears in the usage output.
+    output = shell_output("#{bin}/fill-docx 2>&1", 1)
+    assert_match "fill_docx.bb", output
   end
 end

@@ -1,0 +1,25 @@
+# Clojure / Babashka tooling
+.clj-kondo/
+.cpcache/
+.lsp/
+
+# Python / uv
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Output files (không commit file docx đã render)
+out/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.vscode/
+*.swp

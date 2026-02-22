@@ -1,21 +1,20 @@
 {:paths ["."]
- :deps  {cheshire/cheshire {:mvn/version "5.13.0"}}
 
- ;; Cấu hình để bbin tạo “binary” bb-docx-render
- ;; Sau khi cài bằng bbin, bạn có thể gõ: bb-docx-render template.docx data.json -o '{{...}}.docx'
+ ;; Cấu hình để bbin tạo "binary" bb-docx-render.
+ ;; bbin clone toàn bộ repo → fill_docx.bb và render.py nằm cùng thư mục.
+ ;; fill_docx.bb dùng --project script-dir nên uv tìm đúng pyproject.toml.
  :bbin/bin
  {bb-docx-render {:main-opts ["fill_docx.bb"]}}
+
  :tasks
  {docx:fill
-  {:doc "Điền JSON vào template DOCX bằng docxtpl (uv env). Usage: bb docx:fill <template.docx> <data.json> [-o output.docx|output-template]"
+  {:doc "Dien JSON/YAML/TOML vao template DOCX. Usage: bb docx:fill <template.docx> <data.json|yaml|toml> [-o output.docx|output-template]"
    :requires ([babashka.process :refer [shell]])
    :task (let [args *command-line-args*]
-           ;; chạy script bằng python của uv env
-           (apply shell (concat ["uv" "run" "bb" "fill_docx.bb"] args)))}
-
+           ;; Goi bb fill_docx.bb truc tiep (khong qua uv run bb)
+           (apply shell (concat ["bb" "fill_docx.bb"] args)))}
 
   docx:install
-  {:doc "Cài docxtpl vào uv env"
+  {:doc "Cài các dependency Python vào uv env"
    :task ((requiring-resolve 'babashka.process/shell)
-          "uv" "add" "docxtpl" "jinja2" "python-docx")}}}
-
+          "uv" "add" "docxtpl" "jinja2" "python-docx" "pyyaml" "tomli")}}}

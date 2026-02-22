@@ -1,0 +1,12 @@
+{
+  "ho_ten": "Le Van Phuc",
+  "ngay_sinh": "1988-11-22",
+  "dia_chi": "777 Tran Hung Dao, Q.5, TP.HCM",
+  "so_tien": 25000000,
+  "ds_muc": [
+    { "ten": "Laptop Dell XPS 15", "so_luong": 1, "gia": 22000000 },
+    { "ten": "Chuot khong day Logitech", "so_luong": 2, "gia": 450000 },
+    { "ten": "Ban phim co Keychron", "so_luong": 1, "gia": 1800000 },
+    { "ten": "Tui dung laptop", "so_luong": 1, "gia": 350000 }
+  ]
+}
