@@ -5,25 +5,35 @@ class BbDocxRender < Formula
   sha256 "6d1f8f8856b457aec378afc962d954ca1054b898f14040d0e9f94ee4b9b5487a"
   license "Apache-2.0"
 
-  # uv manages its own Python runtime; babashka is the script runner.
   depends_on "babashka"
   depends_on "uv"
 
   def install
-    # Install all runtime files to libexec.
-    # fill_docx.bb uses `--project libexec` so uv finds pyproject.toml here.
-    # uv.lock is included so uv can resolve deps from cache without re-solving.
+    # Copy all runtime files to libexec (writable during install).
     libexec.install "fill_docx.bb", "render.py", "pyproject.toml", "uv.lock"
+
+    # Pre-install Python deps into libexec/.venv while the Cellar is still
+    # writable. At runtime the Cellar is read-only, so uv must NOT try to
+    # create or modify the venv then — we point it at this pre-built venv via
+    # UV_PROJECT_ENVIRONMENT in the wrapper below.
+    system Formula["uv"].opt_bin/"uv", "sync",
+           "--project", libexec,
+           "--python-preference", "only-system"
 
     (bin/"fill-docx").write <<~EOS
       #!/bin/bash
       # Wrapper for fill-docx installed via Homebrew.
       #
-      # Problem: fill_docx.bb must run from libexec (where pyproject.toml lives),
-      # but user-provided paths are relative to the user's cwd.
+      # Problem: fill_docx.bb must run from libexec (where pyproject.toml/venv
+      # live), but user-provided paths are relative to the user's cwd.
       # Solution: resolve all user paths to absolute BEFORE cd-ing to libexec.
+      #
+      # UV_PROJECT_ENVIRONMENT tells uv to reuse the pre-built venv inside
+      # libexec without attempting any writes (Cellar is read-only at runtime).
 
       set -euo pipefail
+
+      export UV_PROJECT_ENVIRONMENT="#{libexec}/.venv"
 
       args=()
       original_pwd="$(pwd)"
@@ -34,7 +44,6 @@ class BbDocxRender < Formula
             args+=("-o")
             shift
             # Output path may not exist yet — can't use realpath.
-            # If relative, prepend original pwd.
             if [[ "$1" != /* && "$1" != ~* ]]; then
               args+=("${original_pwd}/$1")
             else
@@ -43,8 +52,6 @@ class BbDocxRender < Formula
             shift
             ;;
           *)
-            # Input path must exist — use realpath with -- to handle paths
-            # that might start with a dash.
             args+=("$(realpath -- "$1")")
             shift
             ;;
@@ -57,8 +64,6 @@ class BbDocxRender < Formula
   end
 
   test do
-    # Verify the wrapper runs and prints usage (exit 1 = expected with no args).
-    # Using ASCII-safe pattern that appears in the usage output.
     output = shell_output("#{bin}/fill-docx 2>&1", 1)
     assert_match "fill_docx.bb", output
   end
