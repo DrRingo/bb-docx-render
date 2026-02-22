@@ -27,6 +27,7 @@ class BbDocxRender < Formula
       # Problem: fill_docx.bb must run from libexec (where pyproject.toml/venv
       # live), but user-provided paths are relative to the user's cwd.
       # Solution: resolve all user paths to absolute BEFORE cd-ing to libexec.
+      # When no -o is given, default output is placed in the user's cwd.
       #
       # UV_PROJECT_ENVIRONMENT tells uv to reuse the pre-built venv inside
       # libexec without attempting any writes (Cellar is read-only at runtime).
@@ -36,12 +37,14 @@ class BbDocxRender < Formula
       export UV_PROJECT_ENVIRONMENT="#{libexec}/.venv"
 
       args=()
+      has_output=false
       original_pwd="$(pwd)"
 
       while (( "$#" )); do
         case "$1" in
           -o)
             args+=("-o")
+            has_output=true
             shift
             # Output path may not exist yet — can't use realpath.
             if [[ "$1" != /* && "$1" != ~* ]]; then
@@ -57,6 +60,11 @@ class BbDocxRender < Formula
             ;;
         esac
       done
+
+      # Default output goes to user's cwd, not libexec.
+      if [[ "$has_output" == false ]]; then
+        args+=("-o" "${original_pwd}/output.docx")
+      fi
 
       cd "#{libexec}"
       exec "#{Formula["babashka"].opt_bin}/bb" "fill_docx.bb" "${args[@]}"
