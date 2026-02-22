@@ -1,5 +1,5 @@
 {
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Render DOCX templates using Babashka and Python",
   "homepage": "https://github.com/DrRingo/bb-docx-render",
   "license": "Apache-2.0",
@@ -7,9 +7,9 @@
     "babashka",
     "uv"
   ],
-  "url": "https://github.com/DrRingo/bb-docx-render/archive/refs/tags/0.1.4.tar.gz",
-  "hash": "fadc6b4ee87701c353b5cda4d42af4509efbb0219b2623e535c92d287245f316",
-  "extract_dir": "bb-docx-render-0.1.4",
+  "url": "https://github.com/DrRingo/bb-docx-render/archive/refs/tags/0.1.5.tar.gz",
+  "hash": "7285f0f4246a2b8cdd81a326e1bad8dc25541662f934ca4cd8aae346261020bc",
+  "extract_dir": "bb-docx-render-0.1.5",
   "installer": {
     "script": [
       "New-Item -ItemType Directory \"$dir\\libexec\" | Out-Null",
