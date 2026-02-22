@@ -1,7 +1,7 @@
 #!/usr/bin/env bb
 (ns fill-docx
   (:require [babashka.fs :as fs]
-            [babashka.process :refer [sh]]
+            [babashka.process :refer [shell]]
             [clojure.string :as str]))
 
 ;; Thư mục chứa script này — dùng chung cho resolve-render-py và uv --project
@@ -50,21 +50,20 @@
         (println "Không tìm thấy render.py bên cạnh script hoặc trong thư mục hiện tại."))
       (System/exit 4))
 
-    (let [pycode (slurp render-py)
-          env    (merge (into {} (System/getenv))
-                        {"PYTHONIOENCODING" "utf-8" "PYTHONUTF8" "1"})
-          run    (fn [& cmd]
-                   (try
-                     (apply sh {:in pycode :out :string :err :string :env env} cmd)
-                     (catch Exception _ {:exit 127 :out "" :err ""})))
-          ;; --project script-dir đảm bảo uv luôn tìm đúng pyproject.toml,
-          ;; bất kể user đang chạy từ thư mục nào (quan trọng cho bbin).
-          r      (or (let [r (run "uv" "run" "--project" script-dir "python" "-"
-                                  template datafile output-tmpl)]
-                       (when (zero? (:exit r)) r))
-                     (let [r (run "python3" "-" template datafile output-tmpl)]
-                       (when (zero? (:exit r)) r))
-                     (run "python" "-" template datafile output-tmpl))]
+    (let [env (merge (into {} (System/getenv))
+                     {"PYTHONIOENCODING" "utf-8" "PYTHONUTF8" "1"})
+          run (fn [& cmd]
+                (try
+                  (apply shell {:out :string :err :string :env env :continue true} cmd)
+                  (catch Exception _ {:exit 127 :out "" :err ""})))
+          ;; Gọi render.py trực tiếp bằng file path (tránh pipe stdin trên Windows).
+          ;; --project script-dir đảm bảo uv luôn tìm đúng pyproject.toml.
+          r   (or (let [r (run "uv" "run" "--project" script-dir
+                               "python" render-py template datafile output-tmpl)]
+                    (when (zero? (:exit r)) r))
+                  (let [r (run "python3" render-py template datafile output-tmpl)]
+                    (when (zero? (:exit r)) r))
+                  (run "python" render-py template datafile output-tmpl))]
 
       (if (zero? (:exit r))
         (println "Đã tạo:" (str/trim (:out r)))
