@@ -1,11 +1,5 @@
 {:paths ["."]
 
- ;; Cấu hình để bbin tạo "binary" bb-docx-render.
- ;; bbin clone toàn bộ repo → fill_docx.bb và render.py nằm cùng thư mục.
- ;; fill_docx.bb dùng --project script-dir nên uv tìm đúng pyproject.toml.
- :bbin/bin
- {fill-docx {:main-opts ["fill_docx.bb"]}}
-
  :tasks
  {docx:fill
   {:doc "Dien JSON/YAML/TOML vao template DOCX. Usage: bb docx:fill <template.docx> <data.json|yaml|toml> [-o output.docx|output-template]"

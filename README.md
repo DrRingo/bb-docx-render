@@ -12,10 +12,9 @@ fill-docx template.docx data.json -o "out/{{ho_ten}}_{{_today}}.docx"
 
 1. [Yêu cầu](#yêu-cầu)
 2. [Cài đặt](#cài-đặt)
-   - [bbin](#1-bbin-mọi-nền-tảng-có-babashka)
-   - [Homebrew](#2-homebrew-macos--linux)
-   - [Scoop](#3-scoop-windows)
-   - [Thủ công](#4-cài-thủ-công)
+   - [Homebrew](#1-homebrew-macos--linux)
+   - [Scoop](#2-scoop-windows)
+   - [Thủ công](#3-cài-thủ-công)
 3. [Hướng dẫn sử dụng](#hướng-dẫn-sử-dụng)
 4. [Cú pháp template](#cú-pháp-template)
 5. [Định dạng dữ liệu](#định-dạng-dữ-liệu)
@@ -39,26 +38,7 @@ fill-docx template.docx data.json -o "out/{{ho_ten}}_{{_today}}.docx"
 
 ## Cài đặt
 
-### 1. bbin (mọi nền tảng có Babashka)
-
-[bbin](https://github.com/babashka/bbin) cài script trực tiếp từ GitHub, không cần clone thủ công.
-
-```bash
-bbin install io.github.DrRingo/bb-docx-render
-```
-
-Sau khi cài, lệnh `fill-docx` có sẵn. Cài Python deps lần đầu:
-
-```bash
-# Từ thư mục bất kỳ có pyproject.toml, hoặc chỉ định --project
-uv add docxtpl jinja2 python-docx pyyaml
-```
-
-> **Lưu ý bbin:** `uv` tự tìm `pyproject.toml` từ thư mục chứa script (nhờ `--project` nội bộ), không cần chạy `uv init` thêm.
-
----
-
-### 2. Homebrew (macOS / Linux)
+### 1. Homebrew (macOS / Linux)
 
 ```bash
 brew tap drringo/bb-docx-render https://github.com/drringo/bb-docx-render
@@ -69,7 +49,7 @@ Sau khi cài, lệnh `fill-docx` có sẵn. Lần đầu dùng, `uv` sẽ tự t
 
 ---
 
-### 3. Scoop (Windows)
+### 2. Scoop (Windows)
 
 ```powershell
 scoop install https://raw.githubusercontent.com/DrRingo/bb-docx-render/main/scoop/bb-docx-render.json
@@ -79,7 +59,7 @@ Sau khi cài, lệnh `fill-docx` có sẵn trong PowerShell.
 
 ---
 
-### 4. Cài thủ công
+### 3. Cài thủ công
 
 ```bash
 git clone https://github.com/DrRingo/bb-docx-render
@@ -388,7 +368,7 @@ Chạy `chcp 65001` trước khi dùng tool, hoặc dùng PowerShell. File DOCX 
 
 ### `Không tìm thấy render.py`
 
-`render.py` phải nằm cùng thư mục với `fill_docx.bb`. Khi cài qua brew/scoop/bbin điều này được đảm bảo tự động. Nếu clone thủ công, đảm bảo cả hai file cùng thư mục.
+`render.py` phải nằm cùng thư mục với `fill_docx.bb`. Khi cài qua brew/scoop điều này được đảm bảo tự động. Nếu clone thủ công, đảm bảo cả hai file cùng thư mục.
 
 ---
 
