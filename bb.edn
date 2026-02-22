@@ -4,7 +4,7 @@
  ;; bbin clone toàn bộ repo → fill_docx.bb và render.py nằm cùng thư mục.
  ;; fill_docx.bb dùng --project script-dir nên uv tìm đúng pyproject.toml.
  :bbin/bin
- {bb-docx-render {:main-opts ["fill_docx.bb"]}}
+ {fill-docx {:main-opts ["fill_docx.bb"]}}
 
  :tasks
  {docx:fill

@@ -3,6 +3,6 @@
          babashka/process {:mvn/version "0.5.22"}
          babashka/fs {:mvn/version "0.5.23"}}
  :bbin/bin
- {bb-docx-render {:main-opts ["fill_docx.bb"]}}
+ {fill-docx {:main-opts ["fill_docx.bb"]}}
  :aliases {}}
 

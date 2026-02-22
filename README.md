@@ -47,7 +47,7 @@ fill-docx template.docx data.json -o "out/{{ho_ten}}_{{_today}}.docx"
 bbin install io.github.DrRingo/bb-docx-render
 ```
 
-Sau khi cài, lệnh `bb-docx-render` có sẵn. Cài Python deps lần đầu:
+Sau khi cài, lệnh `fill-docx` có sẵn. Cài Python deps lần đầu:
 
 ```bash
 # Từ thư mục bất kỳ có pyproject.toml, hoặc chỉ định --project
