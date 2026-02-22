@@ -13,14 +13,13 @@
   "installer": {
     "script": [
       "New-Item -ItemType Directory \"$dir\\libexec\" | Out-Null",
-      "Move-Item \"$dir\\fill_docx.bb\"   \"$dir\\libexec\\fill_docx.bb\"",
-      "Move-Item \"$dir\\render.py\"       \"$dir\\libexec\\render.py\"",
-      "Move-Item \"$dir\\pyproject.toml\"  \"$dir\\libexec\\pyproject.toml\"",
-      "Move-Item \"$dir\\uv.lock\"         \"$dir\\libexec\\uv.lock\"",
-      "$libexec = \"$dir\\libexec\"",
-      "$wrapper = @\"\nparam([Parameter(ValueFromRemainingArguments=`$true)][string[]]`$UserArgs)\n`$originalPwd = (Get-Location).Path\n`$resolvedArgs = @()\n`$hasOutput = `$false\n`$nextIsOutput = `$false\nforeach (`$arg in `$UserArgs) {\n  if (`$nextIsOutput) {\n    if ([System.IO.Path]::IsPathRooted(`$arg)) {\n      `$resolvedArgs += `$arg\n    } else {\n      `$resolvedArgs += (Join-Path `$originalPwd `$arg)\n    }\n    `$nextIsOutput = `$false\n    `$hasOutput = `$true\n  } elseif (`$arg -eq '-o') {\n    `$resolvedArgs += '-o'\n    `$nextIsOutput = `$true\n  } elseif (Test-Path `$arg) {\n    `$resolvedArgs += (Resolve-Path `$arg).Path\n  } else {\n    `$resolvedArgs += `$arg\n  }\n}\nif (-not `$hasOutput) {\n  `$resolvedArgs += '-o'\n  `$resolvedArgs += (Join-Path `$originalPwd 'output.docx')\n}\nPush-Location \"$libexec\"\ntry {\n  & bb 'fill_docx.bb' @resolvedArgs\n} finally {\n  Pop-Location\n}\n\"@",
-      "Set-Content \"$dir\\fill-docx.ps1\" $wrapper -Encoding UTF8"
+      "Move-Item \"$dir\\fill_docx.bb\"              \"$dir\\libexec\\fill_docx.bb\"",
+      "Move-Item \"$dir\\render.py\"                 \"$dir\\libexec\\render.py\"",
+      "Move-Item \"$dir\\pyproject.toml\"            \"$dir\\libexec\\pyproject.toml\"",
+      "Move-Item \"$dir\\uv.lock\"                   \"$dir\\libexec\\uv.lock\"",
+      "Move-Item \"$dir\\scoop\\fill-docx-impl.ps1\" \"$dir\\libexec\\fill-docx-impl.ps1\"",
+      "Set-Content \"$dir\\fill-docx.bat\" '@powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"%~dp0libexec\\fill-docx-impl.ps1\" %*' -Encoding ASCII"
     ]
   },
-  "bin": "fill-docx.ps1"
+  "bin": "fill-docx.bat"
 }
