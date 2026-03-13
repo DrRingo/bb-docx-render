@@ -7,6 +7,7 @@ class BbDocxRender < Formula
 
   depends_on "babashka"
   depends_on "uv"
+  depends_on "python@3.12"
 
   def install
     # Copy all runtime files to libexec (writable during install).
@@ -16,8 +17,12 @@ class BbDocxRender < Formula
     # writable. At runtime the Cellar is read-only, so uv must NOT try to
     # create or modify the venv then — we point it at this pre-built venv via
     # UV_PROJECT_ENVIRONMENT in the wrapper below.
+    # Use Homebrew's own Python so users without a system Python >=3.10 don't hit
+    # "No interpreter found" errors regardless of their PATH.
+    python = Formula["python@3.12"].opt_bin/"python3.12"
     system Formula["uv"].opt_bin/"uv", "sync",
            "--project", libexec,
+           "--python", python,
            "--python-preference", "only-system"
 
     (bin/"fill-docx").write <<~EOS
