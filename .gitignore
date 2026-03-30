@@ -12,6 +12,9 @@ __pycache__/
 dist/
 build/
 
+# PyInstaller
+*.spec
+
 # Output files (không commit file docx đã render)
 out/
 
