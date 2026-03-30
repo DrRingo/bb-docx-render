@@ -1,7 +1,7 @@
 [project]
 name = "bb-docx-runner"
 version = "0.1.0"
-description = "Render DOCX từ template bằng docxtpl (uv + Babashka)"
+description = "Render DOCX từ template Jinja2 bằng docxtpl — standalone binary"
 requires-python = ">=3.10"
 authors = [{ name = "Ringo", email = "you@example.com" }]
 dependencies = [
@@ -20,6 +20,11 @@ package = false
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pyinstaller>=6.19.0",
+]
 
 [tool.hatch.build]
 # Dự án này không phải là một package Python tiêu chuẩn mà là một tập hợp script.
