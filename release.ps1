@@ -219,8 +219,44 @@ if ($useGhCli) {
     Invoke-RestMethod $uploadUri -Method Post -Headers $headers `
         -ContentType "application/octet-stream" -Body $fileBytes | Out-Null
     Write-Ok "Đã upload $EXE_NAME"
-
     Write-Ok "Release URL: https://github.com/$REPO/releases/tag/$Tag"
 }
 
+# ── Cập nhật Scoop manifest và Homebrew formula ───────────────────────────────
+Write-Step "Cập nhật Scoop manifest và Homebrew formula"
+
+# Tính SHA256 của binary Windows
+$sha256 = (Get-FileHash $exePath -Algorithm SHA256).Hash.ToLower()
+Write-Ok "SHA256 ($EXE_NAME): $sha256"
+
+# Lấy tag number (bỏ chữ 'v')
+$version = $Tag.TrimStart('v')
+
+# --- Cập nhật scoop/bb-docx-render.json ---
+$scoopFile = Join-Path $ROOT "scoop\bb-docx-render.json"
+$scoopJson = Get-Content $scoopFile -Raw | ConvertFrom-Json
+$scoopJson.version = $version
+$scoopJson.url     = "https://github.com/$REPO/releases/download/$Tag/fill-docx-windows.exe"
+$scoopJson.hash    = $sha256
+$scoopJson | ConvertTo-Json -Depth 10 | Set-Content $scoopFile -Encoding UTF8
+Write-Ok "Đã cập nhật: scoop/bb-docx-render.json (version=$version, hash=$sha256)"
+
+# --- Cập nhật Formula/bb-docx-render.rb ---
+$formulaFile = Join-Path $ROOT "Formula\bb-docx-render.rb"
+$formula = Get-Content $formulaFile -Raw
+# Thay version
+$formula = $formula -replace '(?<=version\s+")[^"]+(?=")', $version
+# Thay tag trong tất cả URL releases/download
+$formula = $formula -replace '(?<=releases/download/)v[^/]+(?=/)', $Tag
+Set-Content $formulaFile $formula -Encoding UTF8
+Write-Ok "Đã cập nhật: Formula/bb-docx-render.rb (version=$version)"
+
+# Commit + push thay đổi manifest
+git -C $ROOT add "scoop/bb-docx-render.json" "Formula/bb-docx-render.rb"
+git -C $ROOT commit -m "chore: bump version to $Tag (scoop + brew)"
+git -C $ROOT push origin main
+Write-Ok "Đã commit và push cập nhật manifest"
+
 Write-Host "`n✨ Hoàn tất! Release $Tag đã được tạo trên GitHub." -ForegroundColor Green
+Write-Host "   Scoop:    scoop install https://raw.githubusercontent.com/$REPO/main/scoop/bb-docx-render.json" -ForegroundColor DarkGray
+Write-Host "   Homebrew: brew tap drringo/bb-docx-render https://github.com/$REPO && brew install bb-docx-render" -ForegroundColor DarkGray

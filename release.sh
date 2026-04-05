@@ -205,4 +205,32 @@ print(json.dumps({
     ok "Release URL: https://github.com/$REPO/releases/tag/$TAG"
 fi
 
+# ── Cập nhật Homebrew formula (version + URL) ─────────────────────────────────
+# Lưu ý: Scoop manifest chỉ cập nhật từ release.ps1 (Windows) vì cần SHA256 của .exe
+# Homebrew dùng :no_check nên không cần tính hash, chỉ cần đổi version + URL
+
+step "Cập nhật Formula/bb-docx-render.rb"
+VERSION="${TAG#v}"   # Bỏ chữ 'v', ví dụ v0.2.0 → 0.2.0
+FORMULA="$ROOT/Formula/bb-docx-render.rb"
+
+# Thay version line
+sed -i.bak "s/version \"[^\"]*\"/version \"$VERSION\"/" "$FORMULA"
+# Thay tag trong tất cả releases/download URL
+sed -i.bak "s|releases/download/v[^/]*/|releases/download/$TAG/|g" "$FORMULA"
+rm -f "$FORMULA.bak"
+ok "Đã cập nhật Formula: version=$VERSION, tag=$TAG"
+
+# Commit + push
+git -C "$ROOT" add "Formula/bb-docx-render.rb"
+
+# Chỉ commit nếu có thay đổi thực sự
+if git -C "$ROOT" diff --cached --quiet; then
+    info "Formula không có thay đổi, bỏ qua commit"
+else
+    git -C "$ROOT" commit -m "chore: bump brew formula to $TAG"
+    git -C "$ROOT" push origin main
+    ok "Đã commit và push cập nhật formula"
+fi
+
 echo -e "\n${GREEN}✨ Hoàn tất! Release $TAG đã được tạo trên GitHub.${NC}"
+echo -e "${GRAY}   Homebrew: brew tap drringo/bb-docx-render https://github.com/$REPO && brew install bb-docx-render${NC}"
