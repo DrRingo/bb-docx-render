@@ -313,6 +313,57 @@ uv run python build_exe.py
 
 ---
 
+## Tạo GitHub Release thủ công (local build)
+
+Thay vì dùng GitHub Actions, bạn có thể build và publish release trực tiếp từ máy:
+
+### Yêu cầu thêm
+
+- **[gh CLI](https://cli.github.com/)** (khuyên dùng): `winget install GitHub.cli` → `gh auth login`  
+  _Hoặc_ đặt biến môi trường `GITHUB_TOKEN` với Personal Access Token có quyền `repo`.
+
+### Windows — build `fill-docx-windows.exe`
+
+```powershell
+.\release.ps1 -Tag v0.2.0
+```
+
+Tùy chọn:
+- `-Draft` — tạo release ở chế độ Draft (chưa public)
+- `-SkipBuild` — bỏ qua bước build, chỉ upload file đã có trong `dist/`
+
+### Linux / WSL — build `fill-docx-linux`
+
+```bash
+chmod +x release.sh
+./release.sh v0.2.0
+# Hoặc:
+./release.sh v0.2.0 --draft
+./release.sh v0.2.0 --skip-build
+```
+
+### macOS — build `fill-docx-macos`
+
+```bash
+chmod +x release.sh
+./release.sh v0.2.0
+```
+
+> **Lưu ý:** Script `release.sh` xác định tên binary theo OS đang chạy. Chạy trên Linux
+> → tạo `fill-docx-linux`; trên macOS → tạo `fill-docx-macos`.
+> Để có đủ cả 3 platform, chạy `release.ps1` trên Windows và `release.sh` trên
+> Linux/macOS — mỗi lần upload thêm binary vào cùng một release tag.
+
+### Quy trình release đầy đủ (ví dụ: v0.2.0)
+
+```
+1. Chạy release.ps1 -Tag v0.2.0          (Windows)
+2. Chạy ./release.sh v0.2.0 --skip-build  (Linux/WSL — bỏ qua vì tag đã push)
+3. Chạy ./release.sh v0.2.0 --skip-build  (macOS)
+```
+
+---
+
 ## Kiến trúc
 
 ```
