@@ -16,7 +16,7 @@ jobs:
           - os: macos-latest
             artifact_name: fill-docx-macos
             exe_path: dist/fill-docx
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             artifact_name: fill-docx-linux
             exe_path: dist/fill-docx
           - os: windows-latest
@@ -27,19 +27,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python 3.11 (macOS & Windows)
-        if: matrix.os != 'ubuntu-latest'
+      - name: Setup Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install dependencies (macOS & Windows)
-        if: matrix.os != 'ubuntu-latest'
+      - name: Install dependencies
         run: |
           pip install pyinstaller docxtpl jinja2 python-docx pyyaml pillow tomli lxml
 
-      - name: Build executable (macOS & Windows)
-        if: matrix.os != 'ubuntu-latest'
+      - name: Build executable
         run: |
           pyinstaller --onefile --name fill-docx \
             --hidden-import docxtpl \
@@ -53,26 +50,6 @@ jobs:
             --hidden-import lxml._elementpath \
             --clean \
             fill_docx_main.py
-        shell: bash
-
-      - name: Build executable (Linux manylinux2014)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace quay.io/pypa/manylinux2014_x86_64 bash -c "
-            /opt/python/cp311-cp311/bin/pip install pyinstaller docxtpl jinja2 python-docx pyyaml pillow tomli lxml &&
-            /opt/python/cp311-cp311/bin/pyinstaller --onefile --name fill-docx \
-              --hidden-import docxtpl \
-              --hidden-import docx \
-              --hidden-import jinja2 \
-              --hidden-import yaml \
-              --hidden-import tomli \
-              --hidden-import PIL \
-              --hidden-import lxml \
-              --hidden-import lxml.etree \
-              --hidden-import lxml._elementpath \
-              --clean \
-              fill_docx_main.py
-          "
         shell: bash
 
       - name: Show build result
