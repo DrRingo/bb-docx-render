@@ -32,3 +32,4 @@ class BbDocxRender < Formula
     assert_match "fill-docx", output
   end
 end
+

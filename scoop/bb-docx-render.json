@@ -4,7 +4,7 @@
   "homepage": "https://github.com/DrRingo/bb-docx-render",
   "license": "Apache-2.0",
   "url": "https://github.com/DrRingo/bb-docx-render/releases/download/v1.0.0/fill-docx-windows.exe",
-  "hash": "PLACEHOLDER_UPDATE_AFTER_RELEASE",
+  "hash": "6f9934a457fc8136b7eddd7f136a49431cb77fdd8cebdbf8f6f74f1ba619f6c2",
   "bin": "fill-docx.exe",
   "installer": {
     "script": [
