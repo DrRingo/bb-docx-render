@@ -86,8 +86,9 @@ fi
 
 # ── Lấy remote repo ───────────────────────────────────────────────────────────
 REMOTE_URL="$(git -C "$ROOT" remote get-url origin)"
-if [[ "$REMOTE_URL" =~ github\.com[:/](.+?)(\.git)?$ ]]; then
+if [[ "$REMOTE_URL" =~ github\.com[:/](.*) ]]; then
     REPO="${BASH_REMATCH[1]}"
+    REPO="${REPO%.git}"
 else
     fail "Không đọc được remote GitHub URL: $REMOTE_URL"
 fi
