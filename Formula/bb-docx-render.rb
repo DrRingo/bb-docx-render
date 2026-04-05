@@ -17,7 +17,7 @@ class BbDocxRender < Formula
 
   on_linux do
     url "https://github.com/DrRingo/bb-docx-render/releases/download/v1.0.0/fill-docx-linux"
-    sha256 "d14adaebcef494a5e18652f1aa36038524313bbef1d574f5de84d0146f4bc85c"
+    sha256 "5ee295892f233b1e1e96b3bfcd92c2ce247e094bdaec1fc5a738500ba02e0624"
   end
 
   def install
